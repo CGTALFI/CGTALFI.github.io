@@ -1,0 +1,11 @@
+# Corpus local — sert uniquement a l'indexation (ingest), ne pas publier.
+# Contient des accords internes ; le site GitHub Pages n'en a pas besoin.
+sources/
+!sources/FORMAT.md
+
+# Dependances
+node_modules/
+embed-build/
+
+# Harnais d'évaluation & scripts de dev (non publiés)
+_*.mjs

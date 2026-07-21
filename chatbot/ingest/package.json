@@ -1,0 +1,10 @@
+{
+  "name": "cgt-chatbot-ingest",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Script d'indexation du corpus (Markdown → Vectorize via le Worker)",
+  "scripts": {
+    "ingest": "node ingest.mjs"
+  }
+}
