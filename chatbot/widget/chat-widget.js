@@ -109,7 +109,9 @@
     if (sources && sources.length) {
       html += '<div class="cgtc-src"><b>Sources</b>';
       sources.forEach(function (s) {
-        var label = escapeHtml((s.titre || "Source") + (s.reference ? " — " + s.reference : ""));
+        var ref = s.reference || "";
+        if (s.page && ref.indexOf("p." + s.page) === -1) ref += (ref ? " · " : "") + "p." + s.page;
+        var label = escapeHtml((s.titre || "Source") + (ref ? " — " + ref : ""));
         var link = s.url ? '<a href="' + escapeAttr(s.url) + '" target="_blank" rel="noopener">' + label + "</a>" : label;
         html += "<details><summary>[" + s.n + "] " + link + "</summary>";
         if (s.extrait) html += "<blockquote>" + escapeHtml(s.extrait).slice(0, 600) + "</blockquote>";

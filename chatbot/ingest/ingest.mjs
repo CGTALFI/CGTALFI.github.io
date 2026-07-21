@@ -1,65 +1,62 @@
 #!/usr/bin/env node
 /**
- * Indexation du corpus CGT.
+ * Indexation du corpus ALFI (thèmes 00–06).
  *
- * Lit sources/**\/*.md, découpe chaque fichier en chunks (un par bloc `##`),
- * puis envoie les chunks par lots au Worker `/admin/ingest`, qui calcule les
- * embeddings et remplit Vectorize.
+ * Lit sources/**\/*.md, découpe chaque fichier (chunk.mjs — découpage par
+ * article/section adapté aux transcriptions OCR), déduit les métadonnées du
+ * chemin (pas de front-matter dans ce corpus), puis envoie les chunks par lots
+ * au Worker `/admin/ingest`, qui calcule les embeddings et remplit Vectorize.
  *
  * Utilisation :
  *   WORKER_URL="https://cgt-chatbot.<compte>.workers.dev" \
  *   INGEST_SECRET="<le même secret que côté Worker>" \
  *   node ingest.mjs
  *
- * Aucune dépendance externe (Node >= 18).
+ * Node >= 18. Aucune dépendance externe.
  */
 import { readdir, readFile } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { join, relative, basename } from "node:path";
 import { createHash } from "node:crypto";
+import { chunkDocument } from "./chunk.mjs";
 
 const WORKER_URL = requireEnv("WORKER_URL").replace(/\/$/, "");
 const INGEST_SECRET = requireEnv("INGEST_SECRET");
 const SOURCES_DIR = process.env.SOURCES_DIR || join(import.meta.dirname, "..", "sources");
 const BATCH = 40; // taille de lot pour les embeddings
 
-// ── Parcours récursif des .md ────────────────────────────────────────────────
+// Exclusions de périmètre (décisions projet) : PV CSE/CSSCT (07) et code env.
+const EXCLUDE = [/(^|\/)07 - /i, /code_environnement/i];
+
 async function listMarkdown(dir) {
   const out = [];
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) out.push(...(await listMarkdown(full)));
-    else if (entry.name.endsWith(".md") && entry.name !== "FORMAT.md") out.push(full);
+    else if (entry.name.endsWith(".md") && !/^(README|FORMAT)\.md$/i.test(entry.name)) out.push(full);
   }
   return out;
 }
 
-// ── Parse front-matter YAML simple (clé: valeur) ─────────────────────────────
-function parseFrontMatter(raw) {
-  const m = raw.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
-  if (!m) return { meta: {}, body: raw };
-  const meta = {};
-  for (const line of m[1].split("\n")) {
-    const kv = line.match(/^([A-Za-z0-9_]+)\s*:\s*(.*)$/);
-    if (kv) meta[kv[1]] = kv[2].trim().replace(/^["']|["']$/g, "");
+// Métadonnées déduites du chemin + nom de fichier
+function metaFromPath(rel) {
+  const theme = rel.split("/")[0];
+  const file = basename(rel).replace(/\.md$/i, "");
+  let type = "accord";
+  let titre = file;
+  if (/Convention collective/i.test(rel)) {
+    type = "convention_collective";
+    titre = "Convention collective nationale des industries chimiques (IDCC 44, brochure 3108)";
+  } else if (/\/Codes\//i.test("/" + rel) || /code_du_travail/i.test(file)) {
+    type = "code_du_travail";
+    titre = "Code du travail";
+  } else if (/^05 - NAO/i.test(theme)) {
+    type = "nao";
   }
-  return { meta, body: m[2] };
+  return { theme, type, titre, source_path: rel };
 }
 
-// ── Découpe le corps en chunks : un par titre de niveau 2 (`## ...`) ─────────
-function splitChunks(body) {
-  const parts = body.split(/^##\s+/m); // le 1er élément = texte avant tout `##`
-  const chunks = [];
-  for (let i = 1; i < parts.length; i++) {
-    const lines = parts[i].split("\n");
-    const heading = lines.shift().trim();
-    const texte = `${heading}\n${lines.join("\n")}`.trim();
-    if (texte) chunks.push({ heading, texte });
-  }
-  return chunks;
-}
-
-function idFor(file, heading) {
-  return createHash("sha1").update(`${file}::${heading}`).digest("hex").slice(0, 32);
+function idFor(rel, i) {
+  return createHash("sha1").update(`${rel}#${i}`).digest("hex").slice(0, 32);
 }
 
 async function postBatch(chunks) {
@@ -73,33 +70,36 @@ async function postBatch(chunks) {
 }
 
 // ── Programme principal ──────────────────────────────────────────────────────
-const files = await listMarkdown(SOURCES_DIR);
-console.log(`${files.length} fichier(s) Markdown trouvé(s).`);
+const files = (await listMarkdown(SOURCES_DIR)).filter(
+  (f) => !EXCLUDE.some((re) => re.test(relative(SOURCES_DIR, f))),
+);
+console.log(`${files.length} fichier(s) Markdown à indexer.`);
 
-const allChunks = [];
+const all = [];
 for (const file of files) {
   const rel = relative(SOURCES_DIR, file);
-  const { meta, body } = parseFrontMatter(await readFile(file, "utf8"));
-  const pieces = splitChunks(body);
-  for (const p of pieces) {
-    allChunks.push({
-      id: idFor(rel, p.heading),
-      texte: p.texte,
-      titre: meta.titre || rel,
-      reference: [meta.reference, p.heading].filter(Boolean).join(" · "),
-      url: meta.url || "",
-      type: meta.type || "",
+  const meta = metaFromPath(rel);
+  const chunks = chunkDocument(await readFile(file, "utf8"));
+  chunks.forEach((c, i) => {
+    all.push({
+      id: idFor(rel, i),
+      texte: c.text,
+      titre: meta.titre,
+      reference: c.article || (c.page ? `p.${c.page}` : ""),
+      page: c.page || "",
+      type: meta.type,
+      source_path: rel,
     });
-  }
-  console.log(`  ${rel} → ${pieces.length} extrait(s)`);
+  });
+  console.log(`  ${rel} → ${chunks.length} chunk(s)`);
 }
 
-console.log(`\nTotal : ${allChunks.length} extraits. Envoi par lots de ${BATCH}…`);
+console.log(`\nTotal : ${all.length} chunks. Envoi par lots de ${BATCH}…`);
 let done = 0;
-for (let i = 0; i < allChunks.length; i += BATCH) {
-  const res = await postBatch(allChunks.slice(i, i + BATCH));
+for (let i = 0; i < all.length; i += BATCH) {
+  const res = await postBatch(all.slice(i, i + BATCH));
   done += res.count || 0;
-  console.log(`  ${done}/${allChunks.length} indexés`);
+  console.log(`  ${done}/${all.length} indexés`);
 }
 console.log("✅ Indexation terminée.");
 

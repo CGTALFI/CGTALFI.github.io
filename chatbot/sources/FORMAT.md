@@ -1,74 +1,44 @@
-# Format des sources Markdown
+# Format des sources
 
-Pour que le chatbot cite **exactement** la bonne référence, chaque fichier suit
-ce format simple : un **front-matter** (métadonnées du document) puis le texte
-**découpé par article / section** avec des titres de niveau 2 (`##`).
+Le corpus réel (« Base documentaire ALFI ») vient de PDF/OCR/bureautique : les
+fichiers **n'ont pas de front-matter**. Les métadonnées sont donc déduites du
+**chemin + nom de fichier**, et le découpage est **structurel** (voir
+[`../ANALYSE-CORPUS.md`](../ANALYSE-CORPUS.md)).
 
-Chaque bloc `##` devient une **unité citable** (un « chunk »). Sa citation est
-construite à partir du front-matter (`titre`, `url`) + du titre du bloc.
+## Où déposer les fichiers
 
----
-
-## Front-matter (en tête de chaque fichier)
-
-```markdown
----
-type: convention_collective      # convention_collective | accord | code_du_travail
-titre: "Convention collective nationale de la métallurgie"
-reference: "IDCC 3248"           # identifiant lisible du document
-url: "https://www.legifrance.gouv.fr/conv_coll/id/KALICONT000044426703"
-date_maj: "2024-01-01"           # date de la version utilisée (AAAA-MM-JJ)
----
-```
-
-| Champ | Obligatoire | Rôle |
-|-------|-------------|------|
-| `type` | oui | catégorie (sert au filtrage et à l'affichage) |
-| `titre` | oui | apparaît dans la citation |
-| `reference` | recommandé | IDCC, n° d'accord, etc. |
-| `url` | oui | lien cliquable affiché sous la réponse |
-| `date_maj` | recommandé | traçabilité de la version |
-
----
-
-## Corps : un `##` par article / section
-
-```markdown
-## Article 12 — Congés pour événements familiaux
-
-Le salarié bénéficie, sur justification, d'une autorisation exceptionnelle
-d'absence de :
-- 4 jours pour son mariage ou la conclusion d'un Pacs ;
-- 3 jours pour chaque naissance ou arrivée d'un enfant en vue d'adoption ;
-- 5 jours pour le décès d'un enfant.
-
-## Article 13 — Prime d'ancienneté
-
-...
-```
-
-- **Un article = un bloc `##`.** C'est l'unité qui sera retrouvée et citée.
-- Le **titre du bloc** doit contenir la référence (« Article 12 — … », « L. 1132-1 — … »).
-- Évitez les blocs trop longs (> ~500 mots) : découpez en sous-articles si besoin.
-- Le Markdown interne (listes, gras) est conservé.
-
----
-
-## Organisation des fichiers
+Reproduire l'arborescence des thèmes 00–06 du Drive sous `sources/` :
 
 ```
 sources/
-├── convention-collective.md          # 1 fichier (ou plusieurs si volumineux)
-├── accords/
-│   ├── accord-teletravail-2023.md
-│   └── accord-nao-2024.md
-└── code-du-travail/
-    ├── licenciement.md               # regroupe les articles L. 1231-x, etc.
-    └── duree-du-travail.md
+├── 00 - Références/
+│   ├── Codes/code_du_travail_complet.md
+│   └── Convention collective/3108.md   (+ synthese_3108.md)
+├── 01 - Durée du travail & astreintes/*.md
+├── 02 - Égalité pro, QVT & conditions de travail/*.md   (+ TELETRAVAIL/)
+├── 03 - Épargne salariale/*.md
+├── 04 - Instances & représentants du personnel/*.md
+├── 05 - NAO/*.md
+└── 06 - Accords applicables/*.md   (+ Droit syndical/)
 ```
 
-> Pour le code du travail, **regroupez par thème** les articles pertinents
-> (un fichier « licenciement », un fichier « congés », etc.), un `##` par article,
-> avec l'URL Légifrance de chaque article dans le titre ou en note.
+## Règles de typage (déduites par `ingest/ingest.mjs`)
 
-Un exemple complet est fourni : [`exemple-convention-collective.md`](exemple-convention-collective.md).
+| Chemin contient… | `type` | Citation |
+|---|---|---|
+| `Convention collective/` | `convention_collective` | Convention Chimie (IDCC 44) — Article N |
+| `/Codes/` ou `code_du_travail` | `code_du_travail` | Code du travail — Article L. … |
+| `05 - NAO/` | `nao` | Nom du document — p.N |
+| autre | `accord` | Nom du document — p.N |
+
+## Exclusions automatiques
+
+`ingest.mjs` ignore : `README.md`, `FORMAT.md`, le **thème 07** (PV CSE/CSSCT,
+données personnelles) et le **code de l'environnement** — conformément aux
+décisions de périmètre. Pour indexer malgré tout, ajuster `EXCLUDE` dans
+`ingest.mjs`.
+
+## Repères de page
+
+Les `<!-- p.N -->` présents dans les fichiers issus de PDF sont utilisés pour la
+citation « document + page » : à conserver tels quels.
