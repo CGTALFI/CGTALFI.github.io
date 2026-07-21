@@ -1,14 +1,17 @@
 /**
- * Découpage structurel adaptatif du corpus ALFI + code du travail.
+ * Découpage structurel adaptatif du corpus ALFI + code du travail + code de
+ * l'environnement.
  *
  * Formats d'article gérés (frontières fortes) :
  *   - `**Article L2312-8**`  (code du travail, en gras) ;
  *   - `Article 8 En vigueur étendu …` (convention collective 3108) ;
- *   - `## ARTICLE 5 : …` (accords d'entreprise, titre Markdown).
+ *   - `## ARTICLE 5 : …` (accords d'entreprise, titre Markdown) ;
+ *   - `### L. 211-1` (code de l'environnement — titre Markdown SANS le mot
+ *     « Article » ; identifiant déjà au format canonique avec point).
  *
  * En plus de la page (`<!-- p.N -->`), on suit le **chemin hiérarchique** issu
- * des titres Markdown (Partie › Livre › Titre › Chapitre) pour le code du
- * travail, afin d'obtenir une citation précise et un classement pondéré.
+ * des titres Markdown (Partie › Livre › Titre › Chapitre) pour les codes,
+ * afin d'obtenir une citation précise et un classement pondéré.
  *
  * Stratégie :
  *   1. couper aux frontières fortes = début d'article OU titre Markdown ;
@@ -18,9 +21,10 @@
 const TARGET = 1600; // taille visée d'un chunk (caractères)
 const MAX = 2600; // au-delà, on force un sous-découpage
 
-// Frontière d'article : « Article » capitalisé, éventuellement en gras (**) ou
-// précédé d'un titre Markdown, suivi d'un identifiant (L2312-8, 8, R. 4121-1…).
-const RE_ARTICLE = /^\s*(?:#{1,6}\s*)?(?:\*\*\s*)?Article\s+[LRD]?\.?\s*\d/;
+// Frontière d'article : soit « Article » capitalisé (éventuellement en gras **
+// ou précédé d'un titre Markdown), soit un titre pur « L./R./D. NNN » (format
+// du code de l'environnement, sans le mot « Article »).
+const RE_ARTICLE = /^\s*(?:#{1,6}\s*)?(?:\*\*\s*)?Article\s+[LRD]?\.?\s*\d|^\s*#{1,6}\s+[LRD]\.\s*\d/;
 const RE_HEADING = /^#{1,6}\s+\S/;
 const RE_PAGE = /<!--\s*p\.(\d+)\s*-->/;
 const RE_PAGE_G = /<!--\s*p\.(\d+)\s*-->/g;
@@ -31,6 +35,9 @@ function extractArticle(text) {
   if (m) return "Article " + m[1].toUpperCase() + ". " + m[2];
   const n = text.match(/Article\s+(\d+(?:\s*(?:bis|ter|quater))?)/i);
   if (n) return "Article " + n[1].replace(/\s+/g, " ").trim();
+  // Titre pur (code de l'environnement) : « ### L. 211-1 », pas de mot « Article ».
+  const h = text.match(/^\s*#{1,6}\s+([LRD])\.\s*(\d[\dA-Za-z\-]*)/m);
+  if (h) return "Article " + h[1].toUpperCase() + ". " + h[2];
   return "";
 }
 
@@ -39,9 +46,11 @@ export function chunkDocument(text) {
 
   // ── 1. Segmentation aux frontières fortes, avec suivi du chemin hiérarchique
   const stack = {}; // niveau de titre (2..6) → intitulé courant
+  const RE_NOISE_HEADING = /^\s*(?:📑\s*)?Table des?\s*mati[eè]res|^\s*(?:📑\s*)?Table de navigation/i;
   const updateHeading = (line) => {
     const h = line.match(/^(#{1,6})\s+(.*\S)\s*$/);
     if (!h || RE_ARTICLE.test(line)) return; // un titre-article n'est pas de la hiérarchie
+    if (RE_NOISE_HEADING.test(h[2])) return; // sommaire/table de navigation : pas de la hiérarchie légale
     const lvl = h[1].length;
     stack[lvl] = h[2].replace(/\*+/g, "").replace(/\s+/g, " ").trim();
     for (let l = lvl + 1; l <= 6; l++) delete stack[l];

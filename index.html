@@ -3342,25 +3342,29 @@ lucide-react/dist/esm/lucide-react.mjs:
 <!-- (généré par chatbot/build-index.mjs). Voir chatbot/DEPLOIEMENT. -->
 <!-- ============================================================= -->
 <script>
-  /* Emplacement des deux index (générés par build-index.mjs) : le socle ALFI
-     et le code du travail. Par défaut relatifs au site ; ajustez si besoin. */
+  /* Emplacement des trois index (générés par build-index.mjs) : le socle ALFI,
+     le code du travail et le code de l'environnement. Par défaut relatifs au
+     site ; ajustez si besoin. */
   window.CGT_INDEX_URL = window.CGT_INDEX_URL || "chatbot/search-index.json";
   window.CGT_CODE_URL = window.CGT_CODE_URL || "chatbot/search-code.json";
+  window.CGT_ENV_URL = window.CGT_ENV_URL || "chatbot/search-env.json";
 </script>
 <script>
 /* Assistant documentaire CGT — recherche plein-texte AVANCÉE côté navigateur.
-   Aucun serveur, aucune clé. Charge deux index : le socle ALFI (convention +
-   accords + NAO) puis, en arrière-plan, le code du travail. Recherche BM25 +
-   accès direct par numéro d'article + synonymes/sigles + pondération par champ.
-   Aucune IA générative → aucune invention : chaque réponse cite l'extrait exact. */
+   Aucun serveur, aucune clé. Charge trois index : le socle ALFI (convention +
+   accords + NAO) puis, en arrière-plan et séquentiellement, le code du travail
+   et le code de l'environnement. Recherche BM25 + accès direct par numéro
+   d'article + synonymes/sigles + pondération par champ. Aucune IA générative
+   → aucune invention : chaque réponse cite l'extrait exact. */
 (function () {
   "use strict";
   var CORE_URL = window.CGT_INDEX_URL || "chatbot/search-index.json";
   var CODE_URL = window.CGT_CODE_URL || "chatbot/search-code.json";
+  var ENV_URL = window.CGT_ENV_URL || "chatbot/search-env.json";
   var RED = "#E30613";
   var DOCS = [], DF = Object.create(null), N = 0, SUMDL = 0;
   var ARTMAP = Object.create(null);
-  var coreState = 0, codeState = 0; // 0=absent 1=chargement 2=prêt
+  var coreState = 0, codeState = 0, envState = 0; // 0=absent 1=chargement 2=prêt
   var PENDING = null;
 
   // ── Styles ───────────────────────────────────────────────────────────────
@@ -3439,7 +3443,9 @@ lucide-react/dist/esm/lucide-react.mjs:
   send.onclick = ask;
   input.addEventListener("keydown", function (e) { if (e.key === "Enter") ask(); });
 
-  // ── Chargement des index (socle immédiat, code en arrière-plan) ───────────
+  // ── Chargement des index : socle immédiat, puis code du travail et code de
+  //    l'environnement en arrière-plan, SÉQUENTIELLEMENT (pas simultanément,
+  //    pour ne pas saturer une connexion mobile) ────────────────────────────
   function loadCore() {
     if (coreState) return;
     coreState = 1;
@@ -3450,7 +3456,7 @@ lucide-react/dist/esm/lucide-react.mjs:
         addDocs(data.docs || []);
         coreState = 2;
         loading.remove();
-        botMsg("Base prête : **" + DOCS.length + "** extraits (convention, accords, NAO). Le code du travail se charge en arrière-plan…");
+        botMsg("Base prête : **" + DOCS.length + "** extraits (convention, accords, NAO). Le code du travail et le code de l'environnement se chargent en arrière-plan…");
         loadCode();
         if (PENDING) { var q = PENDING; PENDING = null; run(q); }
       })
@@ -3468,9 +3474,23 @@ lucide-react/dist/esm/lucide-react.mjs:
         var before = DOCS.length;
         addDocs(data.docs || []);
         codeState = 2;
-        botMsg("✅ Code du travail chargé (**" + (DOCS.length - before) + "** articles) — recherche complète.");
+        botMsg("✅ Code du travail chargé (**" + (DOCS.length - before) + "** articles). Chargement du code de l'environnement…");
+        loadEnv();
       })
       .catch(function () { codeState = 0; /* le socle reste opérationnel */ });
+  }
+  function loadEnv() {
+    if (envState) return;
+    envState = 1;
+    fetch(ENV_URL)
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (data) {
+        var before = DOCS.length;
+        addDocs(data.docs || []);
+        envState = 2;
+        botMsg("✅ Code de l'environnement chargé (**" + (DOCS.length - before) + "** articles) — recherche complète (convention, accords, NAO, code du travail, code de l'environnement).");
+      })
+      .catch(function () { envState = 0; /* le socle + code du travail restent opérationnels */ });
   }
 
   // Indexe un lot de documents (tokenise le corps, met à jour DF, avgdl, ARTMAP).
@@ -3560,7 +3580,7 @@ lucide-react/dist/esm/lucide-react.mjs:
       var ref = doc.r || (doc.p ? "p." + doc.p : "");
       if (!ref && doc.h) { var seg = doc.h.split(" › "); ref = seg[seg.length - 1]; } // repli : dernier niveau du chemin
       if (doc.p && ref.indexOf("p." + doc.p) === -1) ref += (ref ? " · " : "") + "p." + doc.p;
-      var head = (doc.ty === "code_du_travail")
+      var head = (doc.ty === "code_du_travail" || doc.ty === "code_environnement")
         ? escapeHtml(ref) + " — " + escapeHtml(doc.t)
         : escapeHtml(doc.t) + (ref ? " — " + escapeHtml(ref) : "");
       html += '<div class="cgtc-res' + (isExact ? ' exact' : '') + '"><div class="cgtc-res-h"><span class="cgtc-n">[' + n + ']</span>' + head
@@ -3669,7 +3689,7 @@ lucide-react/dist/esm/lucide-react.mjs:
     return escaped.replace(/[A-Za-zÀ-ſ0-9]+/g, function (w) { return qset[stem(fold(w))] ? '<mark class="cgtc-hl">' + w + "</mark>" : w; });
   }
   function typeLabel(t) {
-    return t === "convention_collective" ? "Convention" : t === "code_du_travail" ? "Code du travail" : t === "nao" ? "NAO" : "Accord";
+    return t === "convention_collective" ? "Convention" : t === "code_du_travail" ? "Code du travail" : t === "code_environnement" ? "Code environnement" : t === "nao" ? "NAO" : "Accord";
   }
 
   // ── Rendu / helpers ───────────────────────────────────────────────────────

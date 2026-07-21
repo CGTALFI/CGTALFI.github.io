@@ -9,13 +9,15 @@
  * citation de la source exacte. Le modèle génératif est volontairement absent
  * → zéro hallucination.
  *
- * Deux index (« shards ») sont produits :
+ * Trois index (« shards ») sont produits :
  *   - search-index.json : socle ALFI (convention + accords + NAO) — léger ;
- *   - search-code.json  : code du travail (partie législative) — chargé à part
- *     par le widget, en arrière-plan (mobile préservé).
+ *   - search-code.json  : code du travail (partie législative) ;
+ *   - search-env.json   : code de l'environnement (partie législative) ;
+ *     ces deux derniers sont chargés à part par le widget, en arrière-plan et
+ *     séquentiellement (mobile préservé).
  *
  * Utilisation :
- *   node build-index.mjs                 # régénère les deux shards
+ *   node build-index.mjs                 # régénère les trois shards
  *
  * Node >= 18. Aucune dépendance externe.
  */
@@ -26,9 +28,10 @@ import { chunkDocument } from "./ingest/chunk.mjs";
 const SOURCES_DIR = process.env.SOURCES_DIR || join(import.meta.dirname, "sources");
 const OUT_CORE = process.env.OUT || join(import.meta.dirname, "search-index.json");
 const OUT_CODE = join(import.meta.dirname, "search-code.json");
+const OUT_ENV = join(import.meta.dirname, "search-env.json");
 
-// Exclusions : PV CSE/CSSCT (07, données personnelles), code de l'environnement.
-const EXCLUDE = [/(^|\/)07 - /i, /code_environnement/i];
+// Exclusion : PV CSE/CSSCT (07, données personnelles).
+const EXCLUDE = [/(^|\/)07 - /i];
 
 async function listMarkdown(dir) {
   const out = [];
@@ -41,26 +44,40 @@ async function listMarkdown(dir) {
 }
 
 // Métadonnées déduites du chemin + nom de fichier (aligné sur ingest.mjs).
+// Détection par NOM DE FICHIER explicite en premier (et non par simple
+// appartenance au dossier Codes/, qui étiquetterait à tort tout fichier de ce
+// dossier comme code du travail).
 function metaFromPath(rel) {
   const theme = rel.split(/[\\/]/)[0];
   const file = basename(rel).replace(/\.md$/i, "");
   let type = "accord";
   let titre = file;
-  if (/Convention collective/i.test(rel)) {
-    type = "convention_collective";
-    titre = "Convention collective nationale des industries chimiques (IDCC 44, brochure 3108)";
-  } else if (/[\\/]Codes[\\/]/i.test("/" + rel) || /code_du_travail/i.test(file)) {
+  if (/code_du_travail/i.test(file)) {
     type = "code_du_travail";
     titre = "Code du travail";
+  } else if (/code_environnement/i.test(file)) {
+    type = "code_environnement";
+    titre = "Code de l'environnement";
+  } else if (/Convention collective/i.test(rel)) {
+    type = "convention_collective";
+    titre = "Convention collective nationale des industries chimiques (IDCC 44, brochure 3108)";
   } else if (/^05 - NAO/i.test(theme)) {
     type = "nao";
   }
   return { theme, type, titre, source_path: rel };
 }
 
-// Nettoyage d'affichage : retire les repères de page HTML.
+// Nettoyage d'affichage : retire les repères de page HTML et, pour le code de
+// l'environnement, la ligne de navigation parasite recopiée depuis le site
+// source (« *Ordonnance n°… Legif. Plan Jp.Judi. Jp.Admin. Juricaf* »).
 function clean(t) {
-  return t.replace(/<!--\s*p\.\d+\s*-->/g, "").replace(/[ \t]+\n/g, "\n").trim();
+  return t
+    .replace(/<!--\s*p\.\d+\s*-->/g, "")
+    .split("\n")
+    .filter((l) => !(/Legif\./.test(l) && /Juricaf/.test(l)))
+    .join("\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .trim();
 }
 
 const files = (await listMarkdown(SOURCES_DIR)).filter(
@@ -70,6 +87,7 @@ console.log(`${files.length} fichier(s) à indexer.`);
 
 const core = []; // convention + accords + NAO
 const code = []; // code du travail (partie législative)
+const env = [];  // code de l'environnement (partie législative)
 for (const file of files) {
   const rel = relative(SOURCES_DIR, file).replace(/\\/g, "/");
   const meta = metaFromPath(rel);
@@ -88,6 +106,9 @@ for (const file of files) {
     if (meta.type === "code_du_travail") {
       if (c.path) rec.h = c.path;                      // chemin hiérarchique (code)
       code.push(rec);
+    } else if (meta.type === "code_environnement") {
+      if (c.path) rec.h = c.path;                      // chemin hiérarchique (code)
+      env.push(rec);
     } else {
       core.push(rec);
     }
@@ -111,3 +132,4 @@ async function emit(out, docs, label) {
 
 await emit(OUT_CORE, core, "Convention collective + accords + NAO");
 await emit(OUT_CODE, code, "Code du travail (partie législative)");
+await emit(OUT_ENV, env, "Code de l'environnement (partie législative)");

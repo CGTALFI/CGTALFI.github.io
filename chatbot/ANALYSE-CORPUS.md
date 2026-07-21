@@ -19,13 +19,19 @@ PDF/OCR/bureautique (repères de page `<!-- p.N -->`, pas de front-matter).
 
 ## Décisions de périmètre (validées)
 
-- ✅ **Chatbot = thèmes 00–06** (textes normatifs : code du travail, convention
-  collective, accords, NAO).
+- ✅ **Chatbot = thèmes 00–06** (textes normatifs : code du travail, code de
+  l'environnement, convention collective, accords, NAO).
 - ❌ **Thème 07 exclu** (192 PV CSE/CSSCT) — contient des **données personnelles**
   (collègues nommés, accidents, situations individuelles). Risque RGPD si cité
   dans les réponses. Reste consultable dans le Drive.
-- ❌ **Code de l'environnement exclu** pour l'instant (volume ; ajout possible
-  plus tard pour la CSSCT / risques industriels).
+- ✅ **Code de l'environnement inclus** (partie législative, 7 655 extraits,
+  index séparé `search-env.json`, ~1,5 Mo gzip). Ce fichier utilise un format
+  d'article **différent** du code du travail — titres Markdown purs
+  `### L. 211-1` (sans le mot « Article ») au lieu de `**Article L2312-8**` — et
+  contient une ligne de navigation parasite recopiée du site source après
+  chaque article (« Legif. Plan Jp.Judi. Jp.Admin. Juricaf »). Les deux
+  particularités sont gérées par `ingest/chunk.mjs` (détection du format titre
+  pur) et `build-index.mjs` (nettoyage de la ligne parasite).
 
 ## Découpage (RAG)
 
