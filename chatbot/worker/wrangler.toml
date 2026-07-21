@@ -1,0 +1,24 @@
+# Configuration du Worker Cloudflare — backend du chatbot CGT
+#
+# Prérequis (une seule fois) :
+#   npm i -g wrangler
+#   wrangler login
+#   wrangler vectorize create cgt-sources --dimensions=1024 --metric=cosine
+#   wrangler secret put INGEST_SECRET        # saisir un secret long et aléatoire
+#
+# Déploiement :  wrangler deploy
+
+name = "cgt-chatbot"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# Modèle IA (Workers AI) — pas de clé à gérer, facturé en "Neurons" (offre gratuite/j)
+[ai]
+binding = "AI"
+
+# Base vectorielle des extraits (embeddings bge-m3 = 1024 dimensions)
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "cgt-sources"
+
+# INGEST_SECRET est fourni via `wrangler secret put` (jamais en clair ici).

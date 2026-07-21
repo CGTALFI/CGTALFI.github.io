@@ -1,0 +1,13 @@
+{
+  "name": "cgt-chatbot-worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Backend RAG (Cloudflare Worker) du chatbot documentaire CGT",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}
