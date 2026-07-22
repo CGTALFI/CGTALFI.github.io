@@ -3401,11 +3401,23 @@ lucide-react/dist/esm/lucide-react.mjs:
   + '.cgtc-res-x{font-size:13px;color:#444;line-height:1.5}'
   + '.cgtc-hl{background:#ffe08a;border-radius:2px;padding:0 1px}'
   + '.cgtc-res details{margin-top:5px}.cgtc-res summary{cursor:pointer;color:' + RED + ';font-size:12px}'
-  + '.cgtc-res blockquote{margin:6px 0 0;padding-left:8px;border-left:2px solid #ddd;color:#555;font-size:12px;white-space:pre-wrap}'
+  + '.cgtc-res blockquote{margin:6px 0 0;padding-left:8px;border-left:2px solid #ddd;color:#555;font-size:12px;line-height:1.55}'
   + '.cgtc-foot{padding:10px;border-top:1px solid #eee;display:flex;gap:8px;background:#fff}'
   + '.cgtc-foot input{flex:1;padding:9px 11px;border:1px solid #ccc;border-radius:9px;font-size:14px;font-family:inherit}'
   + '.cgtc-foot button{background:' + RED + ';color:#fff;border:none;border-radius:9px;padding:0 14px;cursor:pointer;font-weight:700}'
   + '.cgtc-foot button:disabled{opacity:.5;cursor:default}'
+  + '.cgtc-hbtns{display:flex;align-items:center;gap:2px}'
+  + '.cgtc-help{background:none;border:none;color:#fff;font-size:15px;line-height:1;cursor:pointer;width:24px;height:24px;border-radius:50%;opacity:.9}'
+  + '.cgtc-help:hover{background:rgba(255,255,255,.18);opacity:1}'
+  + '.cgtc-lead{font-size:13.5px;color:#1a1613;margin-bottom:2px;line-height:1.5}'
+  + '.cgtc-correct{font-size:12px;color:#8a7f72;margin-bottom:4px}'
+  + '.cgtc-correct em{font-style:italic;color:#5a5147}'
+  + '.cgtc-enum{display:inline-block;padding-left:12px}'
+  + '.cgtc-tips{margin:8px 0 0;font-size:12.5px;color:#555;line-height:1.6}'
+  + '.cgtc-tips strong{color:#1a1613}'
+  + '.cgtc-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}'
+  + '.cgtc-chip{background:#fff;border:1px solid ' + RED + ';color:' + RED + ';border-radius:14px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:inherit;line-height:1.2}'
+  + '.cgtc-chip:hover{background:' + RED + ';color:#fff}'
   + '.cgtc-note{font-size:11px;color:#888;text-align:center;padding:0 10px 8px}';
   var style = document.createElement("style");
   style.textContent = css;
@@ -3419,7 +3431,8 @@ lucide-react/dist/esm/lucide-react.mjs:
   panel.setAttribute("aria-label", "Assistant documentaire CGT");
   panel.innerHTML =
     '<div class="cgtc-head"><span>Assistant CGT<small>Code du travail · convention · accords — sources exactes</small></span>' +
-    '<button class="cgtc-x" aria-label="Fermer">×</button></div>' +
+    '<span class="cgtc-hbtns"><button class="cgtc-help" aria-label="Astuces de recherche" title="Astuces">?</button>' +
+    '<button class="cgtc-x" aria-label="Fermer">×</button></span></div>' +
     '<div class="cgtc-log"></div>' +
     '<div class="cgtc-foot"><input type="text" placeholder="Question ou n° d\'article (ex. L2312-8)…" aria-label="Votre question"><button>Chercher</button></div>' +
     '<div class="cgtc-note">Informations indicatives — ne remplacent pas l\'avis d\'un·e délégué·e.</div>';
@@ -3433,15 +3446,38 @@ lucide-react/dist/esm/lucide-react.mjs:
   fab.onclick = function () {
     panel.classList.toggle("open");
     if (panel.classList.contains("open")) {
-      if (!log.childNodes.length)
-        botMsg("Bonjour 👋 Posez votre question (durée du travail, astreintes, CSE, congés, NAO…) ou saisissez un numéro d’article (ex. **L2312-8**). Je cherche dans les textes et je cite l’extrait exact — je n’invente rien.");
+      if (!log.childNodes.length) showWelcome();
       loadCore();
       input.focus();
     }
   };
   panel.querySelector(".cgtc-x").onclick = function () { panel.classList.remove("open"); };
+  panel.querySelector(".cgtc-help").onclick = showTips;
   send.onclick = ask;
   input.addEventListener("keydown", function (e) { if (e.key === "Enter") ask(); });
+  // Chips d'exemple cliquables (délégation d'événement sur le journal)
+  log.addEventListener("click", function (e) {
+    var chip = e.target && e.target.closest ? e.target.closest(".cgtc-chip") : null;
+    if (chip && chip.getAttribute("data-q")) { input.value = chip.getAttribute("data-q"); ask(); }
+  });
+
+  // ── Accueil / astuces / chips (aide à la recherche) ────────────────────────
+  function chipsHtml() {
+    var chips = ["L2312-8", "congé décès", "heures de délégation CSE", "déchets dangereux"];
+    return '<div class="cgtc-chips">' + chips.map(function (c) {
+      return '<button type="button" class="cgtc-chip" data-q="' + c.replace(/"/g, "&quot;") + '">' + escapeHtml(c) + "</button>";
+    }).join("") + "</div>";
+  }
+  function tipsHtml() {
+    return '<div class="cgtc-tips">Pour de meilleurs résultats :<br>'
+      + '• Un <strong>numéro d\'article</strong> (L2312-8, L.211-1) → l\'article exact.<br>'
+      + '• Des <strong>mots-clés précis</strong> plutôt qu\'une longue phrase (« congé décès » plutôt que « combien de jours quand un proche meurt »).<br>'
+      + '• Les <strong>sigles</strong> sont compris : CSE, CSSCT, DUERP, DGI, VIP, RPS, SMIC…</div>' + chipsHtml();
+  }
+  function showWelcome() {
+    botMsg("Bonjour 👋 Je cherche dans le **Code du travail**, la **convention collective** et les **accords**, et je cite l’extrait exact — je n’invente rien." + tipsHtml());
+  }
+  function showTips() { botMsg("Comment bien chercher 👇" + tipsHtml()); }
 
   // ── Chargement des index : socle immédiat, puis code du travail et code de
   //    l'environnement en arrière-plan, SÉQUENTIELLEMENT (pas simultanément,
@@ -3512,6 +3548,7 @@ lucide-react/dist/esm/lucide-react.mjs:
       DOCS.push(d);
     }
     N = DOCS.length;
+    PREFIX = null; // le vocabulaire a changé → l'index de préfixe sera reconstruit
   }
 
   // ── Recherche ─────────────────────────────────────────────────────────────
@@ -3526,7 +3563,7 @@ lucide-react/dist/esm/lucide-react.mjs:
 
   function run(q) {
     var avgdl = SUMDL / (N || 1), k1 = 1.5, b = 0.75, BOOST = 0.3;
-    // 1. Accès direct par numéro d'article (L./R./D. …)
+    // 1. Accès direct par numéro d'article (L./R./D., avec ou sans préfixe)
     var exact = [];
     articleKeys(q).forEach(function (key) {
       (ARTMAP[key] || []).forEach(function (i) { if (exact.indexOf(i) === -1) exact.push(i); });
@@ -3537,8 +3574,21 @@ lucide-react/dist/esm/lucide-react.mjs:
     orig.forEach(function (t) { wmap[t] = 1; });
     orig.forEach(function (t) { (SYN[t] || []).forEach(function (w) { if (wmap[w] == null) wmap[w] = 0.5; }); });
     var present = Object.keys(wmap).filter(function (t) { return DF[t]; });
-    var REFUSE = "Je n’ai pas trouvé cette information dans mes sources (code du travail, convention, accords). Reformulez avec d’autres mots-clés ou un numéro d’article, ou rapprochez-vous d’un·e délégué·e.";
-    if (!exact.length && !present.length) { botMsg(REFUSE); return; }
+    // 2 bis. Rescue orthographique : UNIQUEMENT si la reconnaissance est faible
+    // (aucun / trop peu de termes présents). N'affecte pas les requêtes normales.
+    var corrected = [];
+    if (!exact.length && (present.length === 0 || (orig.length >= 2 && present.length < 2))) {
+      orig.forEach(function (t) {
+        if (DF[t]) return;
+        var f = fuzzy(t);
+        if (f && wmap[f] == null) { wmap[f] = 0.6; corrected.push([t, f]); }
+      });
+      if (corrected.length) present = Object.keys(wmap).filter(function (t) { return DF[t]; });
+    }
+    // Termes de couverture = saisis + corrections retenues (les synonymes comptent via covers()).
+    var covTerms = orig.slice();
+    corrected.forEach(function (c) { if (covTerms.indexOf(c[1]) === -1) covTerms.push(c[1]); });
+    if (!exact.length && !present.length) { refuseMsg(corrected); return; }
     // 3. Étape 1 — rappel BM25 (+ bonus de champ) et couverture (garde-fou anti-bruit)
     var scored = [], maxCov = 0;
     for (var i = 0; i < DOCS.length; i++) {
@@ -3553,50 +3603,116 @@ lucide-react/dist/esm/lucide-react.mjs:
       if (s > 0) {
         scored.push([s, i]);
         var cov = 0;
-        for (var o = 0; o < orig.length; o++) if (covers(d, orig[o])) cov++;
+        for (var o = 0; o < covTerms.length; o++) if (covers(d, covTerms[o])) cov++;
         if (cov > maxCov) maxCov = cov;
       }
     }
     scored.sort(function (a, b2) { return b2[0] - a[0]; });
-    // Garde-fou : sans article exact, au moins 2 termes distincts (synonymes inclus)
-    // doivent co-occurrer dans un même extrait — sinon probablement hors-sujet.
+    // Garde-fou : sans article exact, au moins 2 termes distincts (synonymes/corrections
+    // inclus) doivent co-occurrer dans un même extrait — sinon probablement hors-sujet.
     if (!exact.length) {
-      if (!scored.length || (orig.length >= 2 && maxCov < 2)) { botMsg(REFUSE); return; }
+      if (!scored.length || (orig.length >= 2 && maxCov < 2)) { refuseMsg(corrected); return; }
     }
     // 4. Étape 2 — re-classement des 50 meilleurs (phrase, proximité, couverture, champ)
     var topc = scored.slice(0, 50), maxb = topc.length ? topc[0][0] : 1;
-    var reranked = topc.map(function (p) { return [rerankScore(DOCS[p[1]], orig, p[0] / maxb), p[1]]; });
+    var reranked = topc.map(function (p) { return [rerankScore(DOCS[p[1]], covTerms, p[0] / maxb), p[1]]; });
     reranked.sort(function (a, b2) { return b2[0] - a[0]; });
     var order = exact.concat(reranked.map(function (p) { return p[1]; }));
     var seen = Object.create(null), uni = [];
     for (var z = 0; z < order.length && uni.length < 6; z++) if (!seen[order[z]]) { seen[order[z]] = 1; uni.push(order[z]); }
     order = uni;
-    if (!order.length) { botMsg(REFUSE); return; }
-    // 5. Rendu
+    if (!order.length) { refuseMsg(corrected); return; }
+    // 5. Rendu — accroche « authored » + cartes nettoyées
     var qset = Object.create(null); Object.keys(wmap).forEach(function (w) { qset[w] = 1; });
-    var html = exact.length ? "Article(s) demandé(s) et passages pertinents :" : "Voici les passages les plus pertinents des textes :";
+    var html = "";
+    if (corrected.length) {
+      html += '<div class="cgtc-correct">Recherche avec : '
+        + corrected.map(function (c) { return "<em>" + escapeHtml(c[1]) + "</em>"; }).join(", ") + "</div>";
+    }
+    html += '<div class="cgtc-lead">' + leadHtml(q, exact.length, DOCS[order[0]]) + "</div>";
     for (var r = 0; r < order.length; r++) {
       var doc = DOCS[order[r]], n = r + 1, isExact = exact.indexOf(order[r]) !== -1;
+      var body = cleanExcerpt(doc.x);
       var ref = doc.r || (doc.p ? "p." + doc.p : "");
       if (!ref && doc.h) { var seg = doc.h.split(" › "); ref = seg[seg.length - 1]; } // repli : dernier niveau du chemin
       if (doc.p && ref.indexOf("p." + doc.p) === -1) ref += (ref ? " · " : "") + "p." + doc.p;
-      var head = (doc.ty === "code_du_travail" || doc.ty === "code_environnement")
+      var isCode = doc.ty === "code_du_travail" || doc.ty === "code_environnement";
+      var head = isCode
         ? escapeHtml(ref) + " — " + escapeHtml(doc.t)
         : escapeHtml(doc.t) + (ref ? " — " + escapeHtml(ref) : "");
       html += '<div class="cgtc-res' + (isExact ? ' exact' : '') + '"><div class="cgtc-res-h"><span class="cgtc-n">[' + n + ']</span>' + head
         + '<span class="cgtc-res-tag">' + escapeHtml(typeLabel(doc.ty)) + '</span></div>'
         + (doc.h ? '<div class="cgtc-res-path">' + escapeHtml(doc.h) + '</div>' : '')
-        + '<div class="cgtc-res-x">' + highlight(escapeHtml(snippet(doc.x, qset)), qset) + '</div>'
-        + '<details><summary>Voir l’extrait complet</summary><blockquote>' + highlight(escapeHtml(doc.x), qset) + '</blockquote></details>'
-        + '<div style="font-size:10.5px;color:#aaa;margin-top:4px">' + escapeHtml(doc.s) + '</div></div>';
+        + '<div class="cgtc-res-x">' + renderExcerpt(highlight(escapeHtml(snippet(body, qset)), qset)) + '</div>'
+        + '<details><summary>Voir l’extrait complet</summary><blockquote>' + renderExcerpt(highlight(escapeHtml(body), qset)) + '</blockquote></details>'
+        + (isCode ? '' : '<div style="font-size:10.5px;color:#aaa;margin-top:4px">' + escapeHtml(doc.s) + '</div>')
+        + '</div>';
     }
     botMsg(html);
   }
 
+  // Refus enrichi : pistes de reformulation + éventuelle correction + astuces/chips.
+  function refuseMsg(corrected) {
+    var s = "Je n’ai pas trouvé cette information dans mes sources (code du travail, convention, accords).";
+    if (corrected && corrected.length) {
+      s += " Vouliez-vous dire : " + corrected.map(function (c) { return "**" + escapeHtml(c[1]) + "**"; }).join(", ") + " ?";
+    }
+    s += " Essayez un **numéro d’article** ou des **mots-clés plus simples**, ou rapprochez-vous d’un·e délégué·e.";
+    botMsg(s + tipsHtml());
+  }
+
+  // Accroche rédigée selon l'intention et le meilleur résultat (n'énonce jamais
+  // de règle de droit : la valeur exacte se lit dans l'extrait cité).
+  function leadHtml(q, exactLen, firstDoc) {
+    if (exactLen && firstDoc) {
+      var ref = (firstDoc.r || "l’article demandé").replace(/^Article/, "article");
+      var src = firstDoc.ty === "code_du_travail" ? " du Code du travail"
+        : firstDoc.ty === "code_environnement" ? " du Code de l’environnement"
+        : firstDoc.ty === "convention_collective" ? " de la convention collective" : "";
+      return "Voici l’<strong>" + escapeHtml(ref) + "</strong>" + src + " :";
+    }
+    var kw = keywordsOf(q);
+    var subject = kw.length ? "« <strong>" + kw.map(escapeHtml).join(" ") + "</strong> »" : "votre demande";
+    var it = intentOf(q);
+    var tail = it === "definition" ? "La définition figure dans l’extrait ci-dessous."
+      : it === "procedure" ? "La marche à suivre figure dans l’extrait ci-dessous."
+      : "La réponse figure dans l’extrait ci-dessous.";
+    return "Voici ce que disent les textes sur " + subject + ". <strong>" + tail + "</strong>";
+  }
+  function keywordsOf(q) {
+    var raw = String(q).split(/[^A-Za-zÀ-ÿ0-9]+/), out = [];
+    for (var i = 0; i < raw.length && out.length < 3; i++) {
+      var w = raw[i]; if (!w) continue;
+      var st = stem(fold(w));
+      if (st.length < 2 || STOP[st]) continue;
+      out.push(w);
+    }
+    return out;
+  }
+  // Intention de surface (sert UNIQUEMENT à formuler l'accroche).
+  function intentOf(q) {
+    var s = fold(q);
+    if (articleKeys(q).length) return "article";
+    if (/\bcombien\b|\bnombre de\b|quelle?\s+(?:duree|delai|montant|nombre)/.test(s)) return "quantite";
+    if (/\bai-?\s?je (?:le )?droit\b|\bpuis-?je\b|\ba-t-?on droit\b|\bdroit a\b/.test(s)) return "droit";
+    if (/\bcomment\b|\bdemarche\b|\bprocedure\b|quelles? etapes/.test(s)) return "procedure";
+    if (/\bqu'?est-?ce que\b|\bc'?est quoi\b|\bdefinition\b|que signifie/.test(s)) return "definition";
+    return "general";
+  }
+
   // ── Numéros d'article ─────────────────────────────────────────────────────
   function articleKeys(q) {
-    var keys = [], re = /\b([LRD])\.?\s*(\d[\d]*(?:-\d+)*)/gi, m;
-    while ((m = re.exec(q))) keys.push((m[1] + m[2]).toUpperCase().replace(/\s+/g, ""));
+    var keys = [], seen = Object.create(null);
+    function add(k) { if (k && !seen[k]) { seen[k] = 1; keys.push(k); } }
+    // a) avec préfixe explicite : L2312-8, R. 4121-1, D 1234-5
+    var re = /\b([LRD])\.?\s*(\d[\d]*(?:-\d+)*)/gi, m;
+    while ((m = re.exec(q))) add((m[1] + m[2]).toUpperCase().replace(/\s+/g, ""));
+    // b) sans préfixe : « article 2312-8 », « art. 2312 8 » → tester L/R/D contre ARTMAP
+    var re2 = /\b(?:articles?|art\.?)\s+(\d[\d]*(?:[-\s]\d+)*)/gi, m2;
+    while ((m2 = re2.exec(q))) {
+      var num = m2[1].replace(/\s+/g, "-").toUpperCase();
+      ["L", "R", "D"].forEach(function (p) { if (ARTMAP[p + num]) add(p + num); });
+    }
     return keys;
   }
   function artKey(r) {
@@ -3678,12 +3794,86 @@ lucide-react/dist/esm/lucide-react.mjs:
     for (var i = 0; i < raw.length; i++) { var w = raw[i]; if (w.length < 2 || STOP[w]) continue; out.push(stem(w)); }
     return out;
   }
+
+  // ── Tolérance aux fautes de frappe (rescue) ────────────────────────────────
+  // Index de préfixe (2 lettres → termes du vocabulaire), reconstruit à la
+  // demande quand le vocabulaire change (voir addDocs).
+  var PREFIX = null;
+  function buildPrefix() {
+    PREFIX = Object.create(null);
+    for (var t in DF) { if (t.length < 3) continue; var k = t.slice(0, 2); (PREFIX[k] = PREFIX[k] || []).push(t); }
+  }
+  // Distance d'édition bornée (Levenshtein, sortie anticipée au-delà de max).
+  function editDist(a, b, max) {
+    var la = a.length, lb = b.length;
+    if (Math.abs(la - lb) > max) return max + 1;
+    var prev = [], cur = [], i, j;
+    for (j = 0; j <= lb; j++) prev[j] = j;
+    for (i = 1; i <= la; i++) {
+      cur[0] = i; var mn = cur[0];
+      for (j = 1; j <= lb; j++) {
+        var cost = a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1;
+        cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+        if (cur[j] < mn) mn = cur[j];
+      }
+      if (mn > max) return max + 1;
+      var tmp = prev; prev = cur; cur = tmp;
+    }
+    return prev[lb];
+  }
+  // Terme du vocabulaire le plus proche (≤ 2 éditions), dans le même seau de préfixe.
+  function fuzzy(term) {
+    if (term.length < 4 || DF[term]) return null;
+    if (!PREFIX) buildPrefix();
+    var bucket = PREFIX[term.slice(0, 2)] || [], best = null, bd = 3;
+    for (var i = 0; i < bucket.length; i++) {
+      var c = bucket[i];
+      if (Math.abs(c.length - term.length) > 2) continue;
+      var d = editDist(term, c, 2);
+      if (d < bd) { bd = d; best = c; }
+    }
+    return best && bd <= 2 ? best : null;
+  }
+  // Retire l'en-tête d'article Markdown en tête d'extrait (déjà dans le titre de
+  // la carte) et les marqueurs #/** résiduels, pour un extrait propre.
+  function cleanExcerpt(text) {
+    var t = String(text);
+    // en-tête « Article … » (gras optionnel, mention « En vigueur … » optionnelle)
+    t = t.replace(/^\s*(?:#{1,6}\s*)?(?:\*\*\s*)?Article\s+[LRD]?\.?\s*[\dA-Za-z°ºªer.\-]+(?:\s*\*\*)?(?:\s+En vigueur[^\n]*)?\s*:?\s*/i, "");
+    // titre pur du code de l'environnement : « ### L. 211-1 »
+    t = t.replace(/^\s*#{1,6}\s+[LRD]\.\s*[\dA-Za-z\-]+\s*/, "");
+    // titres Markdown résiduels en début de ligne + gras
+    t = t.replace(/^[ \t]{0,3}#{1,6}[ \t]*/gm, "").replace(/\*\*/g, "");
+    // marqueurs structurels de la convention (« En vigueur étendu / non étendu »)
+    t = t.replace(/\s*En vigueur (?:non )?étendu\s*/g, " ");
+    return t.replace(/[ \t]{2,}/g, " ").trim();
+  }
+
+  // Choisit la fenêtre qui maximise le nombre de TERMES DISTINCTS de la requête
+  // (extrait plus « réponse » que le simple 1er match).
   function snippet(text, qset) {
-    var folded = fold(text), pos = -1, re = /[a-z0-9]+/g, m;
-    while ((m = re.exec(folded))) { if (qset[stem(m[0])]) { pos = m.index; break; } }
-    if (pos < 0) pos = 0;
-    var start = Math.max(0, pos - 110), end = Math.min(text.length, pos + 250);
+    var folded = fold(text), hits = [], re = /[a-z0-9]+/g, m;
+    while ((m = re.exec(folded))) { var st = stem(m[0]); if (qset[st]) hits.push([m.index, st]); }
+    if (!hits.length) return text.length > 300 ? text.slice(0, 300).trim() + "…" : text.trim();
+    var WIN = 300, best = hits[0][0], bestCount = 0;
+    for (var i = 0; i < hits.length; i++) {
+      var s0 = hits[i][0], set = Object.create(null), c = 0;
+      for (var j = i; j < hits.length && hits[j][0] < s0 + WIN; j++) { if (!set[hits[j][1]]) { set[hits[j][1]] = 1; c++; } }
+      if (c > bestCount) { bestCount = c; best = s0; }
+    }
+    var start = Math.max(0, best - 90), end = Math.min(text.length, best + 230);
     return (start > 0 ? "…" : "") + text.slice(start, end).trim() + (end < text.length ? "…" : "");
+  }
+
+  // Met en forme un extrait déjà échappé + surligné : sauts de ligne → <br>,
+  // léger retrait des énumérations légales (1°, 2°, a), I.-).
+  function renderExcerpt(escapedHl) {
+    return String(escapedHl).split("\n").map(function (line) {
+      var l = line.trim();
+      if (!l) return "";
+      if (/^(?:\d+[°.)]|[a-z]\)|[IVX]{1,4}\.\-?)/.test(l)) return '<span class="cgtc-enum">' + l + "</span>";
+      return l;
+    }).filter(function (l) { return l !== ""; }).join("<br>");
   }
   function highlight(escaped, qset) {
     return escaped.replace(/[A-Za-zÀ-ſ0-9]+/g, function (w) { return qset[stem(fold(w))] ? '<mark class="cgtc-hl">' + w + "</mark>" : w; });
