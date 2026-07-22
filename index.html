@@ -3366,7 +3366,7 @@ lucide-react/dist/esm/lucide-react.mjs:
   var ARTMAP = Object.create(null);
   var coreState = 0, codeState = 0, envState = 0; // 0=absent 1=chargement 2=prêt
   var PENDING = null;
-  var FAB_ICON = "⚖️", FAB_LABEL = "Tes droits"; // libellé du bouton (modifiable ici)
+  var FAB_ICON = "🔍"; // icône générique du bouton (modifiable ici)
   // Réflexe collectif : lignes fraternelles tirées au sort en fin de réponse.
   var COLLEC = [
     "Tu as le texte — le collectif t’aide à le faire respecter.",
@@ -3385,15 +3385,16 @@ lucide-react/dist/esm/lucide-react.mjs:
 
   // ── Styles ───────────────────────────────────────────────────────────────
   var css = ''
-  + '.cgtc-fab{position:fixed;right:18px;bottom:18px;z-index:99998;border:none;border-radius:26px;'
-  + 'background:' + RED + ';color:#fff;font-family:"Barlow Condensed","Barlow",sans-serif;font-weight:700;'
-  + 'text-transform:uppercase;letter-spacing:.03em;font-size:16px;padding:12px 18px;cursor:pointer;display:none;'
-  + 'align-items:center;gap:8px;box-shadow:0 8px 22px rgba(198,16,46,.42);transition:transform .15s,box-shadow .15s}'
-  + '.cgtc-fab .i{font-size:19px;line-height:1}'
-  + '.cgtc-fab:hover{transform:translateY(-1px) scale(1.03);box-shadow:0 10px 26px rgba(198,16,46,.5)}'
+  + '.cgtc-fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:99998;width:58px;height:58px;border:none;'
+  + 'border-radius:50%;background:' + RED + ';color:#fff;font-size:24px;cursor:pointer;display:none;'
+  + 'align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(198,16,46,.4);transition:transform .15s,box-shadow .15s}'
+  + '.cgtc-fab:hover{transform:scale(1.07);box-shadow:0 10px 26px rgba(198,16,46,.5)}'
+  + '.cgtc-fab:active{transform:scale(.96)}'
+  + '.cgtc-fab:focus-visible,.cgtc-chip:focus-visible,.cgtc-foot button:focus-visible{outline:3px solid rgba(227,6,19,.55);outline-offset:2px}'
+  + '.cgtc-x:focus-visible,.cgtc-help:focus-visible{outline:2px solid #fff;outline-offset:1px}'
   + '.cgtc-fab.pulse{animation:cgtc-pulse 1.6s ease-out 3}'
   + '@keyframes cgtc-pulse{0%{box-shadow:0 8px 22px rgba(198,16,46,.42),0 0 0 0 rgba(227,6,19,.5)}70%{box-shadow:0 8px 22px rgba(198,16,46,.42),0 0 0 14px rgba(227,6,19,0)}100%{box-shadow:0 8px 22px rgba(198,16,46,.42),0 0 0 0 rgba(227,6,19,0)}}'
-  + '@media (prefers-reduced-motion:reduce){.cgtc-fab.pulse{animation:none}}'
+  + '@media (prefers-reduced-motion:reduce){.cgtc-fab.pulse,body.view-app .cgtc-panel.open,body.view-app .cgtc-nudge.show,.cgtc-dots span{animation:none}}'
   + '.cgtc-nudge{position:fixed;right:18px;bottom:78px;z-index:99998;max-width:232px;background:#1a1613;color:#fff;'
   + 'font-family:"Inter",Arial,sans-serif;font-size:13px;line-height:1.4;padding:10px 12px;border-radius:12px;'
   + 'box-shadow:0 8px 24px rgba(0,0,0,.28);cursor:pointer;display:none}'
@@ -3402,16 +3403,19 @@ lucide-react/dist/esm/lucide-react.mjs:
   + '@keyframes cgtc-rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}'
   + '.cgtc-collec{margin-top:12px;padding-top:8px;border-top:1px solid #efe7db;font-size:12.5px;color:' + RED + ';font-style:italic}'
   + 'body.view-app .cgtc-fab{display:flex}'
-  + '.cgtc-panel{position:fixed;right:18px;bottom:86px;z-index:99999;width:min(420px,calc(100vw - 24px));'
+  + '.cgtc-panel{position:fixed;right:18px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:99999;width:min(420px,calc(100vw - 24px));'
   + 'height:min(640px,calc(100vh - 120px));background:#fff;border-radius:14px;display:none;flex-direction:column;'
   + 'overflow:hidden;box-shadow:0 12px 40px rgba(26,22,19,.28);font-family:"Inter","Barlow",Arial,sans-serif}'
-  + 'body.view-app .cgtc-panel.open{display:flex}'
+  + 'body.view-app .cgtc-panel.open{display:flex;animation:cgtc-rise .2s ease-out}'
   + '.cgtc-head{background:' + RED + ';color:#fff;padding:12px 14px;font-weight:800;display:flex;'
   + 'justify-content:space-between;align-items:center;font-family:"Barlow Condensed","Barlow",sans-serif;'
   + 'text-transform:uppercase;letter-spacing:.02em;font-size:18px}'
   + '.cgtc-head small{display:block;font-weight:500;opacity:.92;font-size:11px;text-transform:none;letter-spacing:0;font-family:"Inter",sans-serif}'
   + '.cgtc-x{background:none;border:none;color:#fff;font-size:22px;line-height:1;cursor:pointer}'
-  + '.cgtc-log{flex:1;overflow-y:auto;padding:14px;background:#F6F3EE}'
+  + '.cgtc-log{flex:1;overflow-y:auto;padding:14px;background:#F6F3EE;overscroll-behavior:contain}'
+  + '.cgtc-log::-webkit-scrollbar{width:8px}'
+  + '.cgtc-log::-webkit-scrollbar-thumb{background:#d9cfc0;border-radius:4px}'
+  + '.cgtc-log::-webkit-scrollbar-track{background:transparent}'
   + '.cgtc-msg{margin-bottom:12px;max-width:92%;padding:10px 12px;border-radius:12px;font-size:14px;line-height:1.5}'
   + '.cgtc-user{margin-left:auto;background:' + RED + ';color:#fff;border-bottom-right-radius:3px}'
   + '.cgtc-bot{background:#fff;border:1px solid #e7e1d8;border-bottom-left-radius:3px;color:#1a1613}'
@@ -3419,7 +3423,8 @@ lucide-react/dist/esm/lucide-react.mjs:
   + '.cgtc-dots span{display:inline-block;width:6px;height:6px;margin:0 1px;border-radius:50%;background:#bbb;animation:cgtcb 1s infinite}'
   + '.cgtc-dots span:nth-child(2){animation-delay:.2s}.cgtc-dots span:nth-child(3){animation-delay:.4s}'
   + '@keyframes cgtcb{0%,60%,100%{opacity:.3}30%{opacity:1}}'
-  + '.cgtc-res{margin-top:10px;border:1px solid #e7e1d8;border-radius:10px;padding:9px 11px;background:#fff}'
+  + '.cgtc-res{margin-top:10px;border:1px solid #e7e1d8;border-radius:10px;padding:9px 11px;background:#fff;transition:border-color .15s}'
+  + '.cgtc-res:hover{border-color:#d8cfc2}'
   + '.cgtc-res.exact{border-color:' + RED + ';box-shadow:0 0 0 2px rgba(227,6,19,.08)}'
   + '.cgtc-res-h{font-size:12.5px;font-weight:700;color:#222;margin-bottom:2px}'
   + '.cgtc-res-h .cgtc-n{color:' + RED + ';font-weight:800;margin-right:4px}'
@@ -3431,7 +3436,8 @@ lucide-react/dist/esm/lucide-react.mjs:
   + '.cgtc-res details{margin-top:5px}.cgtc-res summary{cursor:pointer;color:' + RED + ';font-size:12px}'
   + '.cgtc-res blockquote{margin:6px 0 0;padding-left:8px;border-left:2px solid #ddd;color:#555;font-size:12px;line-height:1.55}'
   + '.cgtc-foot{padding:10px;border-top:1px solid #eee;display:flex;gap:8px;background:#fff}'
-  + '.cgtc-foot input{flex:1;padding:9px 11px;border:1px solid #ccc;border-radius:9px;font-size:14px;font-family:inherit}'
+  + '.cgtc-foot input{flex:1;padding:9px 11px;border:1px solid #ccc;border-radius:9px;font-size:14px;font-family:inherit;transition:border-color .15s,box-shadow .15s}'
+  + '.cgtc-foot input:focus{outline:none;border-color:' + RED + ';box-shadow:0 0 0 2px rgba(227,6,19,.15)}'
   + '.cgtc-foot button{background:' + RED + ';color:#fff;border:none;border-radius:9px;padding:0 14px;cursor:pointer;font-weight:700}'
   + '.cgtc-foot button:disabled{opacity:.5;cursor:default}'
   + '.cgtc-hbtns{display:flex;align-items:center;gap:2px}'
@@ -3444,7 +3450,7 @@ lucide-react/dist/esm/lucide-react.mjs:
   + '.cgtc-tips{margin:8px 0 0;font-size:12.5px;color:#555;line-height:1.6}'
   + '.cgtc-tips strong{color:#1a1613}'
   + '.cgtc-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}'
-  + '.cgtc-chip{background:#fff;border:1px solid ' + RED + ';color:' + RED + ';border-radius:14px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:inherit;line-height:1.2}'
+  + '.cgtc-chip{background:#fff;border:1px solid ' + RED + ';color:' + RED + ';border-radius:16px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit;line-height:1.2}'
   + '.cgtc-chip:hover{background:' + RED + ';color:#fff}'
   + '.cgtc-note{font-size:11px;color:#888;text-align:center;padding:0 10px 8px}';
   var style = document.createElement("style");
@@ -3452,8 +3458,7 @@ lucide-react/dist/esm/lucide-react.mjs:
   document.head.appendChild(style);
 
   // ── DOM ──────────────────────────────────────────────────────────────────
-  var fab = el("button", "cgtc-fab");
-  fab.innerHTML = '<span class="i">' + FAB_ICON + "</span><span>" + FAB_LABEL + "</span>";
+  var fab = el("button", "cgtc-fab", FAB_ICON);
   fab.setAttribute("aria-label", "Ouvrir l'assistant CGT : chercher dans le Code du travail, la convention et les accords");
   var panel = el("div", "cgtc-panel");
   panel.setAttribute("role", "dialog");
@@ -3500,6 +3505,10 @@ lucide-react/dist/esm/lucide-react.mjs:
   panel.querySelector(".cgtc-help").onclick = showTips;
   send.onclick = ask;
   input.addEventListener("keydown", function (e) { if (e.key === "Enter") ask(); });
+  // Échap ferme le panneau (confort clavier)
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && panel.classList.contains("open")) panel.classList.remove("open");
+  });
   // Chips d'exemple cliquables (délégation d'événement sur le journal)
   log.addEventListener("click", function (e) {
     var chip = e.target && e.target.closest ? e.target.closest(".cgtc-chip") : null;
