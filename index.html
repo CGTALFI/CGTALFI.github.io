@@ -3366,13 +3366,41 @@ lucide-react/dist/esm/lucide-react.mjs:
   var ARTMAP = Object.create(null);
   var coreState = 0, codeState = 0, envState = 0; // 0=absent 1=chargement 2=prêt
   var PENDING = null;
+  var FAB_ICON = "⚖️", FAB_LABEL = "Tes droits"; // libellé du bouton (modifiable ici)
+  // Réflexe collectif : lignes fraternelles tirées au sort en fin de réponse.
+  var COLLEC = [
+    "Tu as le texte — le collectif t’aide à le faire respecter.",
+    "Seul·e on doute, ensemble on agit.",
+    "Un article, c’est utile. Le collectif, c’est décisif.",
+    "Un doute, une situation concrète ? Viens-en parler à tes élu·es.",
+    "Ce que tu lis ici, on le défend mieux à plusieurs.",
+    "Le droit, c’est le point d’appui. Le collectif, c’est le levier."
+  ];
+  var lastCollec = -1;
+  function pickCollec() {
+    if (COLLEC.length < 2) return COLLEC[0] || "";
+    var i; do { i = Math.floor(Math.random() * COLLEC.length); } while (i === lastCollec);
+    lastCollec = i; return COLLEC[i];
+  }
 
   // ── Styles ───────────────────────────────────────────────────────────────
   var css = ''
-  + '.cgtc-fab{position:fixed;right:18px;bottom:18px;z-index:99998;width:58px;height:58px;border:none;'
-  + 'border-radius:50%;background:' + RED + ';color:#fff;font-size:24px;cursor:pointer;display:none;'
-  + 'align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(198,16,46,.35);transition:transform .15s}'
-  + '.cgtc-fab:hover{transform:scale(1.06)}'
+  + '.cgtc-fab{position:fixed;right:18px;bottom:18px;z-index:99998;border:none;border-radius:26px;'
+  + 'background:' + RED + ';color:#fff;font-family:"Barlow Condensed","Barlow",sans-serif;font-weight:700;'
+  + 'text-transform:uppercase;letter-spacing:.03em;font-size:16px;padding:12px 18px;cursor:pointer;display:none;'
+  + 'align-items:center;gap:8px;box-shadow:0 8px 22px rgba(198,16,46,.42);transition:transform .15s,box-shadow .15s}'
+  + '.cgtc-fab .i{font-size:19px;line-height:1}'
+  + '.cgtc-fab:hover{transform:translateY(-1px) scale(1.03);box-shadow:0 10px 26px rgba(198,16,46,.5)}'
+  + '.cgtc-fab.pulse{animation:cgtc-pulse 1.6s ease-out 3}'
+  + '@keyframes cgtc-pulse{0%{box-shadow:0 8px 22px rgba(198,16,46,.42),0 0 0 0 rgba(227,6,19,.5)}70%{box-shadow:0 8px 22px rgba(198,16,46,.42),0 0 0 14px rgba(227,6,19,0)}100%{box-shadow:0 8px 22px rgba(198,16,46,.42),0 0 0 0 rgba(227,6,19,0)}}'
+  + '@media (prefers-reduced-motion:reduce){.cgtc-fab.pulse{animation:none}}'
+  + '.cgtc-nudge{position:fixed;right:18px;bottom:78px;z-index:99998;max-width:232px;background:#1a1613;color:#fff;'
+  + 'font-family:"Inter",Arial,sans-serif;font-size:13px;line-height:1.4;padding:10px 12px;border-radius:12px;'
+  + 'box-shadow:0 8px 24px rgba(0,0,0,.28);cursor:pointer;display:none}'
+  + 'body.view-app .cgtc-nudge.show{display:block;animation:cgtc-rise .25s ease-out}'
+  + '.cgtc-nudge:after{content:"";position:absolute;right:26px;bottom:-5px;width:11px;height:11px;background:#1a1613;transform:rotate(45deg)}'
+  + '@keyframes cgtc-rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}'
+  + '.cgtc-collec{margin-top:12px;padding-top:8px;border-top:1px solid #efe7db;font-size:12.5px;color:' + RED + ';font-style:italic}'
   + 'body.view-app .cgtc-fab{display:flex}'
   + '.cgtc-panel{position:fixed;right:18px;bottom:86px;z-index:99999;width:min(420px,calc(100vw - 24px));'
   + 'height:min(640px,calc(100vh - 120px));background:#fff;border-radius:14px;display:none;flex-direction:column;'
@@ -3424,8 +3452,9 @@ lucide-react/dist/esm/lucide-react.mjs:
   document.head.appendChild(style);
 
   // ── DOM ──────────────────────────────────────────────────────────────────
-  var fab = el("button", "cgtc-fab", "🔍");
-  fab.setAttribute("aria-label", "Ouvrir l'assistant documentaire CGT");
+  var fab = el("button", "cgtc-fab");
+  fab.innerHTML = '<span class="i">' + FAB_ICON + "</span><span>" + FAB_LABEL + "</span>";
+  fab.setAttribute("aria-label", "Ouvrir l'assistant CGT : chercher dans le Code du travail, la convention et les accords");
   var panel = el("div", "cgtc-panel");
   panel.setAttribute("role", "dialog");
   panel.setAttribute("aria-label", "Assistant documentaire CGT");
@@ -3435,15 +3464,31 @@ lucide-react/dist/esm/lucide-react.mjs:
     '<button class="cgtc-x" aria-label="Fermer">×</button></span></div>' +
     '<div class="cgtc-log"></div>' +
     '<div class="cgtc-foot"><input type="text" placeholder="Question ou n° d\'article (ex. L2312-8)…" aria-label="Votre question"><button>Chercher</button></div>' +
-    '<div class="cgtc-note">Informations indicatives — ne remplacent pas l\'avis d\'un·e délégué·e.</div>';
+    '<div class="cgtc-note">Pour t\'informer et te rassurer. Pour agir : parles-en à tes élu·es et au collectif — c\'est là qu\'on est le plus fort·es. 👊</div>';
   document.body.appendChild(fab);
   document.body.appendChild(panel);
+
+  // Bulle « coup de coude » au tout premier passage (mémorisée dans le navigateur).
+  var nudge = el("div", "cgtc-nudge");
+  nudge.setAttribute("aria-hidden", "true");
+  nudge.textContent = "Un doute sur tes droits ? Demande-moi 👇";
+  document.body.appendChild(nudge);
+  function hideNudge() { nudge.classList.remove("show"); try { localStorage.setItem("cgtc_nudge", "1"); } catch (e) {} }
+  nudge.onclick = function () { hideNudge(); fab.onclick(); };
+  try {
+    if (!localStorage.getItem("cgtc_nudge")) {
+      fab.classList.add("pulse");
+      setTimeout(function () { nudge.classList.add("show"); }, 1200);
+      setTimeout(function () { nudge.classList.remove("show"); }, 8000);
+    }
+  } catch (e) {}
 
   var log = panel.querySelector(".cgtc-log");
   var input = panel.querySelector("input");
   var send = panel.querySelector(".cgtc-foot button");
 
   fab.onclick = function () {
+    hideNudge(); fab.classList.remove("pulse");
     panel.classList.toggle("open");
     if (panel.classList.contains("open")) {
       if (!log.childNodes.length) showWelcome();
@@ -3475,7 +3520,7 @@ lucide-react/dist/esm/lucide-react.mjs:
       + '• Les <strong>sigles</strong> sont compris : CSE, CSSCT, DUERP, DGI, VIP, RPS, SMIC…</div>' + chipsHtml();
   }
   function showWelcome() {
-    botMsg("Bonjour 👋 Je cherche dans le **Code du travail**, la **convention collective** et les **accords**, et je cite l’extrait exact — je n’invente rien." + tipsHtml());
+    botMsg("**Salut camarade 👊** Ici tu fouilles le **Code du travail**, la **convention** et **nos accords** — je te sors le texte exact, sourcé, sans rien inventer. Pas de question bête, tu es à ta place. Pose ta question avec tes mots, ou tape un numéro d’article.<br>⚠️ <em>Je t’informe et te rassure — mais pour ta situation, le plus fort c’est d’en parler au collectif. Seul·e on doute, ensemble on agit.</em>" + tipsHtml());
   }
   function showTips() { botMsg("Comment bien chercher 👇" + tipsHtml()); }
 
@@ -3648,16 +3693,17 @@ lucide-react/dist/esm/lucide-react.mjs:
         + (isCode ? '' : '<div style="font-size:10.5px;color:#aaa;margin-top:4px">' + escapeHtml(doc.s) + '</div>')
         + '</div>';
     }
+    html += '<div class="cgtc-collec">👊 ' + escapeHtml(pickCollec()) + '</div>';
     botMsg(html);
   }
 
   // Refus enrichi : pistes de reformulation + éventuelle correction + astuces/chips.
   function refuseMsg(corrected) {
-    var s = "Je n’ai pas trouvé cette information dans mes sources (code du travail, convention, accords).";
+    var s = "Je n’ai pas trouvé ça dans mes sources (code du travail, convention, accords).";
     if (corrected && corrected.length) {
-      s += " Vouliez-vous dire : " + corrected.map(function (c) { return "**" + escapeHtml(c[1]) + "**"; }).join(", ") + " ?";
+      s += " Tu voulais peut-être dire : " + corrected.map(function (c) { return "**" + escapeHtml(c[1]) + "**"; }).join(", ") + " ?";
     }
-    s += " Essayez un **numéro d’article** ou des **mots-clés plus simples**, ou rapprochez-vous d’un·e délégué·e.";
+    s += " Réessaie avec un **numéro d’article** ou des **mots-clés plus simples** — et surtout, ne reste pas seul·e avec ta question : le **collectif**, lui, aura la réponse. 👊";
     botMsg(s + tipsHtml());
   }
 
