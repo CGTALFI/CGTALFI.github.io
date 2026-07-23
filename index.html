@@ -3446,6 +3446,8 @@ lucide-react/dist/esm/lucide-react.mjs:
   + '.cgtc-lead{font-size:13.5px;color:#1a1613;margin-bottom:2px;line-height:1.5}'
   + '.cgtc-correct{font-size:12px;color:#8a7f72;margin-bottom:4px}'
   + '.cgtc-correct em{font-style:italic;color:#5a5147}'
+  + '.cgtc-concepts{font-size:12px;color:#8a7f72;margin-bottom:4px}'
+  + '.cgtc-concepts em{font-style:normal;font-weight:600;color:#5a5147}'
   + '.cgtc-enum{display:inline-block;padding-left:12px}'
   + '.cgtc-tips{margin:8px 0 0;font-size:12.5px;color:#555;line-height:1.6}'
   + '.cgtc-tips strong{color:#1a1613}'
@@ -3627,6 +3629,16 @@ lucide-react/dist/esm/lucide-react.mjs:
     var wmap = Object.create(null);
     orig.forEach(function (t) { wmap[t] = 1; });
     orig.forEach(function (t) { (SYN[t] || []).forEach(function (w) { if (wmap[w] == null) wmap[w] = 0.5; }); });
+    // 2 ter. Situations courantes : la question brute (non tokenisée) est testée
+    // contre des tournures du quotidien ; les concepts juridiques associés sont
+    // injectés comme des synonymes (mêmes poids/traitement), pour comprendre une
+    // formulation sans vocabulaire juridique.
+    var situConcepts = [];
+    var qFolded = fold(q);
+    SITUATIONS.forEach(function (s) {
+      if (s.rx.test(qFolded)) s.add.forEach(function (w) { if (situConcepts.indexOf(w) === -1) situConcepts.push(w); });
+    });
+    situConcepts.forEach(function (w) { if (wmap[w] == null) wmap[w] = 0.35; });
     var present = Object.keys(wmap).filter(function (t) { return DF[t]; });
     // 2 bis. Rescue orthographique : UNIQUEMENT si la reconnaissance est faible
     // (aucun / trop peu de termes présents). N'affecte pas les requêtes normales.
@@ -3639,9 +3651,10 @@ lucide-react/dist/esm/lucide-react.mjs:
       });
       if (corrected.length) present = Object.keys(wmap).filter(function (t) { return DF[t]; });
     }
-    // Termes de couverture = saisis + corrections retenues (les synonymes comptent via covers()).
+    // Termes de couverture = saisis + corrections + concepts de situation (les synonymes comptent via covers()).
     var covTerms = orig.slice();
     corrected.forEach(function (c) { if (covTerms.indexOf(c[1]) === -1) covTerms.push(c[1]); });
+    situConcepts.forEach(function (w) { if (DF[w] && covTerms.indexOf(w) === -1) covTerms.push(w); });
     if (!exact.length && !present.length) { refuseMsg(corrected); return; }
     // 3. Étape 1 — rappel BM25 (+ bonus de champ) et couverture (garde-fou anti-bruit)
     var scored = [], maxCov = 0;
@@ -3682,6 +3695,11 @@ lucide-react/dist/esm/lucide-react.mjs:
     if (corrected.length) {
       html += '<div class="cgtc-correct">Recherche avec : '
         + corrected.map(function (c) { return "<em>" + escapeHtml(c[1]) + "</em>"; }).join(", ") + "</div>";
+    }
+    var situShown = situConcepts.filter(function (w) { return DF[w] && orig.indexOf(w) === -1; });
+    if (situShown.length) {
+      html += '<div class="cgtc-concepts">Recherche élargie à : '
+        + situShown.map(function (w) { return "<em>" + escapeHtml(w) + "</em>"; }).join(", ") + "</div>";
     }
     html += '<div class="cgtc-lead">' + leadHtml(q, exact.length, DOCS[order[0]]) + "</div>";
     for (var r = 0; r < order.length; r++) {
@@ -3836,12 +3854,71 @@ lucide-react/dist/esm/lucide-react.mjs:
     harcelement: ["agissement"], vip: ["visite", "information", "prevention"],
     rps: ["risques", "psychosociaux"], tms: ["troubles", "musculosquelettiques"],
     delegation: ["heures", "delegation"], deces: ["evenements", "familiaux"],
+    virer: ["licenciement", "licencier"], licencier: ["licenciement"],
+    enceinte: ["maternite", "grossesse"], grossesse: ["maternite", "enceinte"],
+    demission: ["rupture", "preavis"], inaptitude: ["reclassement"],
+    reclassement: ["inaptitude"], cpf: ["compte", "personnel", "formation"],
+    cet: ["compte", "epargne", "temps"], vae: ["validation", "acquis", "experience"],
+    preavis: ["demission", "rupture"], retraite: ["depart", "pension"],
+    conges: ["conge"], ferie: ["jour", "ferie"], astreinte: ["astreintes"],
   };
   function expand(toks) {
     var out = toks.slice();
     toks.forEach(function (t) { if (SYN[t]) SYN[t].forEach(function (w) { if (out.indexOf(w) === -1) out.push(w); }); });
     return out;
   }
+
+  // ── Situations courantes : phrases/inquiétudes du quotidien → concepts ─────
+  // juridiques. Complète SYN (mot-à-mot) pour comprendre une formulation sans
+  // vocabulaire juridique. N'énonce jamais de règle : élargit seulement la
+  // recherche ; la réponse reste l'extrait exact cité (100 % extractif).
+  // Contenu rédigé par défaut — à relire/enrichir sur le terrain.
+  var RAW_SITUATIONS = [
+    // Licenciement / rupture
+    { rx: /\b(?:peu[xt]|risque|peur|droit)\b.{0,20}\b(?:me\s+)?(?:virer|licenci)/, add: "licenciement protection" },
+    { rx: /\blicenci(?:e|ement)\b.{0,25}\b(?:abusif|injustifi|sans motif|pas de raison)/, add: "licenciement cause reelle serieuse" },
+    { rx: /\bperiode d.?essai\b.{0,20}(?:virer|rompre|rupture|fin)/, add: "periode essai rupture" },
+    { rx: /\bje veux (?:partir|quitter|demissionner)\b|\bdemissionner\b/, add: "demission preavis" },
+    { rx: /\brupture conventionnelle\b/, add: "rupture conventionnelle indemnite" },
+    { rx: /\bfaute grave\b|\bmise a pied\b/, add: "faute grave licenciement" },
+    // Maladie / arrêt / accident du travail
+    { rx: /\barr[eê]t (?:de )?(?:travail|maladie)\b|\bje suis (?:en arret|malade)\b/, add: "arret travail maladie indemnite" },
+    { rx: /\baccident (?:du|de) travail\b|\bje me suis blesse[e]? au travail\b/, add: "accident travail declaration" },
+    { rx: /\bmaladie professionnelle\b/, add: "maladie professionnelle" },
+    { rx: /\bvisite medicale\b|\bmedecin du travail\b/, add: "visite information prevention medecin travail" },
+    { rx: /\binapte\b|\binaptitude\b/, add: "inaptitude reclassement" },
+    // Grossesse / famille
+    { rx: /\benceinte\b|\bgrossesse\b/, add: "maternite grossesse protection licenciement" },
+    { rx: /\bcongé (?:paternite|naissance)\b|\bmon (?:enfant|bebe) (?:est ne|va naitre)\b/, add: "paternite naissance conge" },
+    { rx: /\bdeces\b.{0,20}(?:famille|proche|parent|conjoint|enfant)|\bun proche (?:qui )?(?:est mort|meurt|est decede)\b|\bquelqu.?un (?:de ma famille )?(?:meurt|est mort)\b/, add: "conge evenements familiaux deces" },
+    { rx: /\bmariage\b|\bpacs\b/, add: "conge evenements familiaux mariage" },
+    { rx: /\bproche aidant\b|\baider (?:un parent|mes parents)\b/, add: "proches aidants conge" },
+    // Harcèlement / discrimination
+    { rx: /\bharcel|rabaiss|humili|insult(?:e|ee)? au travail\b/, add: "harcelement agissement" },
+    { rx: /\bdiscrimin/, add: "discrimination egalite" },
+    // Salaire / temps de travail / primes
+    { rx: /\bpas pay[ée]\b|\bsalaire (?:pas|non) vers[ée]\b|\bje ne suis pas pay[ée]\b/, add: "salaire paiement retard" },
+    { rx: /\bheures? sup(?:plementaires?)?\b.{0,25}(?:pay|pai|recup)|(?:pay|pai|recup).{0,25}\bheures? sup(?:plementaires?)?\b/, add: "heures supplementaires majoration" },
+    { rx: /\baugmentation\b.{0,20}salaire|\bpas (?:ete )?augmente/, add: "salaire nao negociation" },
+    { rx: /\bprime\b.{0,20}(?:pas vers|refus|manque)/, add: "prime anciennete" },
+    { rx: /\bcombien (?:d.?heures|de temps)\b.{0,15}travailler|\bduree (?:max|maximale) (?:de )?travail/, add: "duree travail maximale" },
+    // CSE / représentation
+    { rx: /\bheures? de d[ée]l[ée]gation\b/, add: "delegation heures cse" },
+    { rx: /\belu[e]?\b.{0,20}(?:protection|licenci)/, add: "protection representant personnel licenciement" },
+    { rx: /\bcomment (?:devenir|se presenter) (?:elu|delegue|candidat)/, add: "election representant personnel" },
+    // Sécurité / danger
+    { rx: /\bdanger (?:grave|immine?nt)\b|\bdroit de retrait\b|\bdroit d.?alerte\b|\brefuser\b.{0,25}\bdanger(?:eux|euse)?\b|\bdanger(?:eux|euse)?\b.{0,25}\brefuser\b/, add: "danger grave imminent alerte retrait" },
+    // Télétravail / organisation
+    { rx: /\bt[ée]l[ée]travail\b/, add: "teletravail" },
+    { rx: /\bcombien de jours? de cong[ée]s?\b|\bcong[ée]s? pay[ée]s?\b/, add: "conges payes duree" },
+    { rx: /\bastreinte\b/, add: "astreintes" },
+    // Épargne salariale / formation
+    { rx: /\bint[ée]ressement\b|\bparticipation\b.{0,15}(?:salari|prime)/, add: "interessement participation epargne salariale" },
+    { rx: /\bformation\b.{0,15}(?:droit|comment|demander)/, add: "formation professionnelle cpf" },
+  ];
+  // Pré-tokenise chaque "add" (une seule fois) avec le même pipeline fold/stem
+  // que l'indexation, pour garantir des mots compatibles avec le vocabulaire.
+  var SITUATIONS = RAW_SITUATIONS.map(function (s) { return { rx: s.rx, add: tokenize(s.add) }; });
   function fold(s) { return String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }
   function stem(w) { return w.length > 4 ? w.replace(/(aux|eaux|s|x)$/, "") : w; }
   function tokenize(s) {
