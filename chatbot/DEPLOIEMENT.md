@@ -25,18 +25,36 @@ Chaque étape affiche un message à l'utilisateur (voir « Séquence des message
 ci-dessous) ; en cas d'échec d'un fetch en arrière-plan, les corpus déjà chargés
 restent pleinement opérationnels (pas d'erreur bloquante).
 
-- **Widget** : déjà **inliné** dans `index.html` (bulle 🔍 en bas à droite, visible
-  uniquement dans l'app). Rien à installer.
+- **Widget** : fichier **partagé** `chatbot/widget.js`, inclus par les deux pages
+  (`<script src="chatbot/widget.js" defer>`). Bulle 🔍 en bas à droite, visible
+  uniquement dans l'app. Rien à installer.
 - **Trois index**, générés par `build-index.mjs` depuis `sources/` :
   - `search-index.json` — convention + accords + NAO (~3 000 extraits) ;
   - `search-code.json` — **code du travail, partie législative** (~12 500 articles) ;
   - `search-env.json` — **code de l'environnement, partie législative**
     (~7 700 articles) ; chargé en dernier, en arrière-plan, puis mis en cache.
-- **Moteur** (recherche en 2 étapes, réglée par banc d'évaluation) : rappel
-  **BM25** → **re-classement** des 50 meilleurs (phrase, proximité, couverture,
-  champ). Plus **accès direct par numéro d'article** (`L2312-8`, `L. 211-1`),
-  **synonymes/sigles** (CSE, CSSCT, RTT, NAO…) et garde-fou anti-hors-sujet.
-  Aucune IA générative → aucune invention. (Réglage/mesure : `_eval.mjs`, dev only.)
+- **Moteur** — recherche en deux temps, chaque réglage validé par banc d'essai :
+  1. **Rappel** : BM25 sur le texte **fusionné (RRF)** avec un second index BM25
+     sur les questions **doc2query** (`chatbot/doc2query.json` : 156 articles,
+     ~350 reformulations en langage militant, indexées avec l'extrait) ;
+  2. **Re-classement** des 50 meilleurs : phrase, proximité, couverture, champ,
+     couverture doc2query.
+  Plus : **accès direct par numéro d'article** (`L2312-8`, `L. 211-1`),
+  **thésaurus** sigles + registre familier (CSE, DUERP, « bosser », « viré »,
+  « le toubib »…), et **garde-fou anti-hors-sujet**.
+  Aucune IA générative → aucune invention.
+- **UX** : détection d'intention (n° d'article / combien / définition…) pour
+  adapter l'accroche, extraits nettoyés de leurs marqueurs Markdown, fenêtre
+  d'extrait choisie par densité de mots-clés, exemples cliquables, bouton « ? »
+  d'astuces et refus enrichi.
+
+> **Modèles d'IA : testés et écartés, par la mesure.** Un bi-encodeur
+> (e5-small, 118 Mo) et un cross-encodeur (bge-reranker-v2-m3, 544 Mo) ont été
+> évalués : le premier n'apporte qu'une question sur douze, le second **dégrade**
+> les résultats (100 % → 67 % sur le banc formel). Raison de fond : le problème
+> restant est un problème de **rappel**, pas de classement — un re-classeur ne
+> peut pas retrouver ce que la recherche n'a pas ramené. Détails et chiffres :
+> `AUDIT-LOT2-3.md`. Le levier qui marche est le doc2query (`AUDIT-DOC2QUERY-ETENDU.md`).
 
 ### Séquence des messages affichés à l'utilisateur
 
@@ -61,17 +79,45 @@ node serve-local.mjs
 
 Puis ouvrir **http://localhost:8080**. (Alternative : `python -m http.server 8080`.)
 
-## Mettre à jour le corpus (seule opération récurrente)
+## Mettre à jour le corpus (opération récurrente)
 
-Quand un texte change dans `sources/` :
+Quand un texte change dans `sources/`, **ou** quand on enrichit
+`chatbot/doc2query.json` :
 
 ```bash
 cd chatbot
 node build-index.mjs     # régénère LES TROIS index (socle + code du travail + environnement)
 ```
 
-Puis publier `index.html` + `chatbot/search-index.json` + `chatbot/search-code.json`
-+ `chatbot/search-env.json`.
+Puis publier `index.html` + les trois `chatbot/search-*.json`.
+
+## Améliorer la pertinence : enrichir `doc2query.json`
+
+**C'est le levier le plus rentable du projet** (voir `AUDIT-DOC2QUERY-ETENDU.md` :
+top-3 de 33 % à 54 % sur des questions en langage familier, sans aucun
+téléchargement supplémentaire pour l'utilisateur).
+
+Le principe : associer à un article les **questions qu'un·e militant·e poserait
+vraiment**, dans son vocabulaire. Elles sont indexées avec l'article, ce qui le
+rend trouvable même quand la question n'emploie aucun mot du texte de loi.
+
+```json
+"Article L. 3133-4": [
+  "le 1er mai est férié et chômé",
+  "premier mai travail interdit"
+]
+```
+
+Règles :
+- écrire **d'après le contenu réel** de l'article (ne jamais inventer une règle) ;
+- **registre courant** (« filer un local », « ils veulent me virer », « le toubib »),
+  c'est là que se situe le gain — pas dans des paraphrases juridiques ;
+- 3 à 8 formulations par article suffisent ;
+- relancer `node build-index.mjs` après modification.
+
+**Idéal** : faire relire/compléter ce fichier par des militant·es à partir des
+questions réellement posées en permanence. C'est la meilleure amélioration
+possible, et elle ne coûte rien.
 
 ## Mise en ligne (une fois)
 
