@@ -1,0 +1,667 @@
+{
+  "_comment": "Doc2query — questions militantes reformulées, écrites à partir du contenu réel de chaque article (zéro invention). Objectif : combler l'écart de vocabulaire DANS L'INDEX (le rappel), seul levier dont l'effet est mesuré sur le langage familier (voir AUDIT-LOT2-3.md : ni bi-encodeur ni cross-encodeur ne résolvent ce problème). Style volontairement FAMILIER (boîte, virer, patron, toubib, boulot...), car c'est ainsi que les gens écrivent. Intégré par build-index.mjs (champ q), indexé séparément et fusionné par RRF. [DÉCONTAMINÉ : toute formulation trop proche d une question des jeux de test B/C a été retirée automatiquement, pour que la mesure porte sur la généralisation et non sur la mémorisation.]",
+  "Article L. 3121-18": [
+    "durée maximale quotidienne de travail",
+    "combien d'heures maximum par jour",
+    "dix heures de travail par jour c'est légal",
+    "dérogation durée quotidienne travail inspecteur du travail",
+    "on peut me faire bosser combien d'heures dans la journée",
+    "12h dans la journée c'est autorisé",
+    "journée trop longue limite légale"
+  ],
+  "Article L. 3121-19": [
+    "dépassement de la durée quotidienne maximale par accord d'entreprise",
+    "un accord peut-il dépasser les dix heures par jour",
+    "convention collective dépassement durée quotidienne"
+  ],
+  "Article L. 3121-20": [
+    "durée maximale hebdomadaire de travail",
+    "combien d'heures maximum par semaine",
+    "48 heures par semaine c'est légal",
+    "ils peuvent me faire travailler combien d'heures dans la semaine",
+    "semaine trop chargée limite hebdo"
+  ],
+  "Article L. 3121-27": [
+    "durée légale du travail 35 heures",
+    "c'est quoi la durée légale de travail par semaine",
+    "les 35 heures c'est quoi exactement"
+  ],
+  "Article L. 3121-28": [
+    "c'est quoi une heure supplémentaire",
+    "à partir de quand c'est des heures sup",
+    "au-delà de 35h c'est majoré"
+  ],
+  "Article L. 3121-30": [
+    "contingent annuel d'heures supplémentaires",
+    "y a un maximum d'heures sup par an",
+    "au-delà du contingent contrepartie en repos"
+  ],
+  "Article L. 3141-3": [
+    "congés payés combien de jours par mois travaillé",
+    "calcul du nombre de jours de congés payés",
+    "2,5 jours de congés par mois c'est ça",
+    "j'ai droit à combien de congés par mois bossé",
+    "combien de jours de vacances je cumule"
+  ],
+  "Article L. 3141-31": [
+    "fermeture de l'entreprise pendant les congés indemnité",
+    "l'employeur ferme plus longtemps que les congés légaux",
+    "indemnité fermeture établissement au-delà des congés"
+  ],
+  "Article L. 3141-12": [
+    "prendre ses congés dès l'embauche",
+    "je viens d'arriver je peux déjà poser des congés"
+  ],
+  "Article L. 3141-16": [
+    "qui décide de l'ordre des départs en congés",
+    "c'est le patron qui choisit mes dates de congés",
+    "ordre des départs en vacances qui décide"
+  ],
+  "Article L. 1221-19": [
+    "durée maximale de la période d'essai",
+    "période d'essai CDI ouvrier cadre technicien durée",
+    "ils peuvent me virer facilement pendant combien de temps au début",
+    "l'essai dure combien de temps pour un cadre"
+  ],
+  "Article L. 1221-21": [
+    "renouvellement de la période d'essai",
+    "peut-on renouveler la période d'essai une fois",
+    "durée maximale période d'essai avec renouvellement"
+  ],
+  "Article L. 1221-13": [
+    "registre unique du personnel obligatoire",
+    "liste des salariés de l'établissement obligatoire"
+  ],
+  "Article L. 1237-11": [
+    "qu'est-ce que la rupture conventionnelle",
+    "définition rupture conventionnelle du contrat",
+    "l'employeur peut-il imposer une rupture conventionnelle",
+    "partir d'un commun accord avec mon patron",
+    "rupture à l'amiable comment ça marche"
+  ],
+  "Article L. 1237-13": [
+    "montant de l'indemnité de rupture conventionnelle",
+    "indemnité minimale rupture conventionnelle",
+    "date de rupture du contrat en rupture conventionnelle",
+    "je touche combien en rupture conventionnelle"
+  ],
+  "Article L. 1237-1": [
+    "préavis en cas de démission",
+    "combien de temps de préavis quand je pars de moi-même"
+  ],
+  "Article L. 1231-1": [
+    "comment un CDI peut-il être rompu",
+    "les façons de mettre fin à un CDI"
+  ],
+  "Article L. 1234-1": [
+    "durée du préavis de licenciement",
+    "combien de temps de préavis en cas de licenciement",
+    "préavis selon l'ancienneté licenciement",
+    "délai avant mon dernier jour après licenciement"
+  ],
+  "Article L. 1234-4": [
+    "inexécution du préavis avance la date de fin de contrat",
+    "si je ne fais pas mon préavis le contrat se termine plus tôt"
+  ],
+  "Article L. 1234-5": [
+    "indemnité compensatrice de préavis non exécuté",
+    "l'employeur me dispense de préavis suis-je payé quand même"
+  ],
+  "Article L. 1234-9": [
+    "montant de l'indemnité de licenciement",
+    "ancienneté minimale pour indemnité de licenciement",
+    "8 mois d'ancienneté indemnité de licenciement",
+    "je touche combien si on me vire"
+  ],
+  "Article L. 1234-19": [
+    "certificat de travail à la fin du contrat",
+    "papiers de fin de contrat certificat"
+  ],
+  "Article L. 1234-20": [
+    "reçu pour solde de tout compte",
+    "solde de tout compte c'est quoi"
+  ],
+  "Article L. 1232-2": [
+    "entretien préalable avant licenciement obligatoire",
+    "ils doivent me convoquer avant de me virer",
+    "convocation entretien préalable lettre recommandée"
+  ],
+  "Article L. 1232-4": [
+    "se faire assister à l'entretien préalable",
+    "je peux venir accompagné à l'entretien",
+    "assistance par un collègue ou conseiller entretien"
+  ],
+  "Article L. 1232-6": [
+    "lettre de licenciement motifs",
+    "ils doivent écrire pourquoi ils me virent",
+    "notification du licenciement recommandé"
+  ],
+  "Article L. 1233-3": [
+    "c'est quoi un licenciement économique",
+    "suppression de poste licenciement pour motif économique"
+  ],
+  "Article L. 1331-1": [
+    "définition sanction employeur"
+  ],
+  "Article L. 1332-1": [
+    "griefs écrits avant sanction",
+    "ils doivent me dire par écrit ce qu'ils me reprochent"
+  ],
+  "Article L. 1332-2": [
+    "convocation avant sanction disciplinaire",
+    "procédure avant mise à pied ou sanction"
+  ],
+  "Article L. 1332-4": [
+    "délai de deux mois pour sanctionner une faute",
+    "ils peuvent me sanctionner combien de temps après les faits",
+    "prescription des faits fautifs"
+  ],
+  "Article L. 3121-16": [
+    "temps de pause obligatoire durée minimale",
+    "20 minutes de pause après six heures de travail",
+    "pause obligatoire quand"
+  ],
+  "Article L. 3121-17": [
+    "un accord peut-il augmenter le temps de pause",
+    "pause plus longue que 20 minutes accord d'entreprise"
+  ],
+  "Article L. 3131-1": [
+    "repos quotidien onze heures minimum",
+    "temps de coupure entre deux services"
+  ],
+  "Article L. 3131-2": [
+    "dérogation au repos quotidien par accord"
+  ],
+  "Article L. 3132-2": [
+    "repos hebdomadaire durée minimale",
+    "24 heures plus le repos quotidien par semaine"
+  ],
+  "Article L. 3132-3": [
+    "le repos hebdomadaire le dimanche",
+    "on doit se reposer le dimanche"
+  ],
+  "Article L. 3133-1": [
+    "liste des jours fériés",
+    "quels sont les jours fériés légaux"
+  ],
+  "Article L. 3133-4": [
+    "le 1er mai est férié et chômé",
+    "premier mai travail interdit"
+  ],
+  "Article L. 3122-2": [
+    "période de nuit minuit 5 heures"
+  ],
+  "Article L. 3122-5": [
+    "qui est travailleur de nuit",
+    "je suis considéré travailleur de nuit à partir de quand"
+  ],
+  "Article L. 3121-9": [
+    "astreinte sans être sur le lieu de travail"
+  ],
+  "Article L. 3121-10": [
+    "l'astreinte compte-t-elle dans le repos quotidien",
+    "temps d'astreinte et repos"
+  ],
+  "Article L. 3121-53": [
+    "forfait en heures ou en jours",
+    "c'est quoi un forfait jours"
+  ],
+  "Article L. 3121-58": [
+    "qui peut être au forfait jours",
+    "cadres autonomes convention de forfait en jours"
+  ],
+  "Article L. 3121-64": [
+    "ce que doit contenir l'accord de forfait jours",
+    "nombre de jours travaillés forfait accord"
+  ],
+  "Article L. 3123-6": [
+    "contrat de travail à temps partiel écrit mentions",
+    "ce qui doit figurer dans un contrat à temps partiel"
+  ],
+  "Article L. 3171-2": [
+    "décompte des heures quand les horaires sont individuels",
+    "l'employeur doit compter mes heures"
+  ],
+  "Article R. 4121-1": [
+    "document unique d'évaluation des risques obligation employeur",
+    "DUERP qui doit le rédiger",
+    "évaluation des risques par unité de travail",
+    "le papier obligatoire qui liste les dangers",
+    "l'employeur doit lister les dangers dans un document"
+  ],
+  "Article R. 4412-10": [
+    "document unique évaluation risques chimiques",
+    "résultats évaluation des risques agents chimiques consignés où"
+  ],
+  "Article L. 4121-1": [
+    "obligation de sécurité de l'employeur",
+    "le patron doit assurer notre sécurité",
+    "protéger la santé physique et mentale des travailleurs"
+  ],
+  "Article L. 4121-2": [
+    "principes généraux de prévention",
+    "les 9 principes de prévention",
+    "éviter les risques combattre à la source"
+  ],
+  "Article L. 4121-3": [
+    "évaluation des risques par l'employeur",
+    "l'employeur doit évaluer les risques"
+  ],
+  "Article L. 4131-1": [
+    "droit de retrait danger grave et imminent",
+    "je peux arrêter de bosser si c'est dangereux",
+    "quitter mon poste en cas de danger"
+  ],
+  "Article L. 4131-3": [
+    "pas de sanction ni retenue de salaire après droit de retrait",
+    "ils peuvent me sanctionner si j'exerce mon droit de retrait",
+    "retenue sur salaire droit de retrait interdite"
+  ],
+  "Article L. 4132-2": [
+    "alerte danger grave et imminent consignée par écrit",
+    "l'élu doit écrire son alerte danger"
+  ],
+  "Article L. 4141-1": [
+    "information et formation des travailleurs sur les risques",
+    "l'employeur doit nous former à la sécurité"
+  ],
+  "Article L. 4622-2": [
+    "mission des services de santé au travail",
+    "à quoi sert la médecine du travail"
+  ],
+  "Article L. 4624-1": [
+    "visite médicale suivi individuel état de santé",
+    "visite d'information et de prévention médecin du travail",
+    "suivi de santé au travail par le médecin du travail",
+    "visite médicale à l'embauche"
+  ],
+  "Article L. 4624-2": [
+    "suivi médical renforcé poste à risque",
+    "surveillance médicale renforcée risques particuliers"
+  ],
+  "Article L. 4624-3": [
+    "le médecin du travail propose un aménagement de poste",
+    "aménagement de poste préconisé par le médecin"
+  ],
+  "Article L. 4624-4": [
+    "déclaration d'inaptitude par le médecin du travail",
+    "le médecin me déclare inapte comment ça se passe"
+  ],
+  "Article L. 4624-7": [
+    "contester l'avis du médecin du travail",
+    "je ne suis pas d'accord avec l'avis d'aptitude"
+  ],
+  "Article L. 1226-2": [
+    "reclassement après inaptitude maladie non professionnelle",
+    "inapte l'employeur doit me reclasser"
+  ],
+  "Article L. 1226-4": [
+    "reprise du paiement du salaire un mois après inaptitude",
+    "un mois après l'inaptitude ils doivent me repayer"
+  ],
+  "Article L. 1226-10": [
+    "reclassement après accident du travail inaptitude",
+    "inapte suite à un accident du travail reclassement"
+  ],
+  "Article L. 1152-1": [
+    "définition du harcèlement moral au travail",
+    "qu'est-ce que le harcèlement moral",
+    "agissements répétés dégradation conditions de travail",
+    "mon chef me rabaisse tout le temps",
+    "quelqu'un qui m'humilie au travail"
+  ],
+  "Article L. 1152-4": [
+    "obligation de l'employeur de prévenir le harcèlement moral",
+    "l'employeur doit-il prévenir le harcèlement moral"
+  ],
+  "Article L. 1152-5": [
+    "sanction disciplinaire pour harcèlement moral",
+    "un salarié harceleur peut-il être sanctionné"
+  ],
+  "Article L. 1153-1": [
+    "définition du harcèlement sexuel au travail",
+    "propos sexistes répétés au travail c'est quoi"
+  ],
+  "Article L. 1153-5": [
+    "obligation de l'employeur contre le harcèlement sexuel"
+  ],
+  "Article L. 1154-1": [
+    "charge de la preuve en cas de harcèlement",
+    "c'est à moi de prouver le harcèlement"
+  ],
+  "Article L. 1132-1": [
+    "interdiction des discriminations",
+    "on ne peut pas me discriminer pour mes origines mon syndicat",
+    "discrimination à l'embauche interdite"
+  ],
+  "Article L. 1134-1": [
+    "charge de la preuve discrimination"
+  ],
+  "Article L. 1142-1": [
+    "égalité femmes hommes offre d'emploi embauche"
+  ],
+  "Article L. 3221-2": [
+    "égalité de rémunération entre femmes et hommes",
+    "à travail égal salaire égal"
+  ],
+  "Article L. 3221-3": [
+    "ce qui compte comme rémunération pour l'égalité salariale"
+  ],
+  "Article L. 3121-36": [
+    "taux de majoration des heures supplémentaires",
+    "combien de pourcent de majoration heures sup",
+    "25% majoration heures supplémentaires premières heures"
+  ],
+  "Article L. 3121-33": [
+    "un accord d'entreprise peut-il fixer un autre taux de majoration des heures supplémentaires",
+    "taux de majoration heures sup par accord collectif"
+  ],
+  "Article R. 3243-1": [
+    "mentions obligatoires du bulletin de paie",
+    "que doit contenir mon bulletin de salaire"
+  ],
+  "Article L. 3243-2": [
+    "remise du bulletin de paie obligatoire",
+    "l'employeur doit me donner une fiche de paie"
+  ],
+  "Article L. 3251-1": [
+    "retenue sur salaire pour fournitures interdite",
+    "le patron peut-il me retenir de l'argent sur ma paye"
+  ],
+  "Article L. 3252-2": [
+    "fraction saisissable du salaire"
+  ],
+  "Article L. 3231-2": [
+    "salaire minimum de croissance SMIC",
+    "c'est quoi le SMIC",
+    "salaire minimum garanti"
+  ],
+  "Article L. 2312-8": [
+    "attributions générales du comité social et économique",
+    "quelles sont les missions du CSE",
+    "expression collective des salariés CSE gestion entreprise",
+    "à quoi sert le CSE"
+  ],
+  "Article L. 2312-1": [
+    "attributions du CSE selon la taille de l'entreprise",
+    "CSE moins de 50 salariés attributions différentes"
+  ],
+  "Article L. 2312-17": [
+    "consultations récurrentes obligatoires du CSE",
+    "sur quoi le CSE doit-il être consulté chaque année",
+    "orientations stratégiques situation économique politique sociale consultation CSE"
+  ],
+  "Article L. 2312-19": [
+    "accord fixant le contenu des consultations du CSE",
+    "un accord peut-il définir les modalités des consultations récurrentes"
+  ],
+  "Article L. 2312-18": [
+    "base de données économiques sociales et environnementales BDESE",
+    "c'est quoi la BDESE",
+    "où sont les infos économiques pour les élus"
+  ],
+  "Article L. 2312-59": [
+    "droit d'alerte atteinte aux droits des personnes",
+    "alerte du CSE sur les droits des personnes"
+  ],
+  "Article L. 2312-60": [
+    "droit d'alerte danger grave et imminent du CSE",
+    "alerte santé publique environnement par un élu"
+  ],
+  "Article L. 2315-7": [
+    "heures de délégation des élus du CSE",
+    "crédit d'heures des membres du CSE",
+    "combien d'heures pour faire mon mandat"
+  ],
+  "Article L. 2315-9": [
+    "mutualisation des heures de délégation entre élus",
+    "on peut se répartir les heures de délégation"
+  ],
+  "Article L. 2315-11": [
+    "temps payé comme travail effectif pour les élus",
+    "les heures de réunion sont-elles payées"
+  ],
+  "Article L. 2315-27": [
+    "réunions du CSE sur la santé sécurité",
+    "4 réunions annuelles SSCT"
+  ],
+  "Article L. 2315-28": [
+    "fréquence des réunions du CSE",
+    "le CSE se réunit combien de fois par mois"
+  ],
+  "Article L. 2315-61": [
+    "budget de fonctionnement du CSE montant",
+    "subvention de fonctionnement du comité social et économique pourcentage masse salariale",
+    "0,20% de la masse salariale CSE",
+    "le CSE touche combien pour fonctionner"
+  ],
+  "Article L. 2315-62": [
+    "budget de fonctionnement du CSE central",
+    "plusieurs comités d'établissement comment se répartit le budget"
+  ],
+  "Article L. 2315-78": [
+    "expert-comptable du comité"
+  ],
+  "Article L. 2315-79": [
+    "nombre d'expertises du CSE dans les consultations récurrentes",
+    "combien d'expertises le CSE peut-il demander"
+  ],
+  "Article L. 2315-94": [
+    "expertise pour risque grave",
+    "expert en cas de risque grave identifié"
+  ],
+  "Article L. 2314-1": [
+    "composition du CSE nombre d'élus",
+    "combien d'élus au CSE selon l'effectif"
+  ],
+  "Article L. 2143-13": [
+    "heures de délégation du délégué syndical",
+    "crédit d'heures du DS"
+  ],
+  "Article L. 2143-17": [
+    "les heures de délégation sont payées",
+    "le patron peut-il contester mes heures de délégation"
+  ],
+  "Article L. 2142-3": [
+    "panneaux d'affichage syndical",
+    "affichage des communications syndicales"
+  ],
+  "Article L. 2142-4": [
+    "diffusion de tracts syndicaux dans l'entreprise",
+    "distribuer des tracts aux heures d'entrée et sortie"
+  ],
+  "Article L. 2142-8": [
+    "local syndical mis à disposition",
+    "local commun sections syndicales 200 salariés"
+  ],
+  "Article L. 2141-5": [
+    "discrimination syndicale interdite",
+    "on ne peut pas me pénaliser parce que je suis syndiqué"
+  ],
+  "Article L. 2242-1": [
+    "négociation obligatoire dans l'entreprise NAO",
+    "négociations obligatoires salaires égalité"
+  ],
+  "Article L. 2242-13": [
+    "négociation annuelle à défaut d'accord"
+  ],
+  "Article L. 1225-17": [
+    "durée du congé de maternité",
+    "l'arrêt maternité dure combien de temps",
+    "six semaines avant dix semaines après accouchement"
+  ],
+  "Article L. 1225-16": [
+    "absences pour examens médicaux grossesse",
+    "autorisation d'absence pour les rendez-vous de grossesse"
+  ],
+  "Article L. 1225-25": [
+    "retour de congé maternité même emploi",
+    "je retrouve mon poste après la maternité"
+  ],
+  "Article L. 1225-35": [
+    "congé de paternité durée",
+    "le père a droit à combien de jours à la naissance",
+    "congé naissance pour le conjoint"
+  ],
+  "Article L. 3142-1": [
+    "congés pour événements familiaux",
+    "jours de congé pour mariage naissance décès",
+    "absences autorisées pour la famille"
+  ],
+  "Article L. 3142-4": [
+    "nombre de jours pour un décès dans la famille",
+    "congé décès durée"
+  ],
+  "Article L. 3142-6": [
+    "congé de proche aidant pronostic vital",
+    "m'occuper d'un proche gravement malade"
+  ],
+  "Article L. 3142-28": [
+    "congé sabbatique conditions"
+  ],
+  "Article L. 6321-1": [
+    "obligation de formation par l'employeur",
+    "l'employeur doit-il me former",
+    "adaptation au poste de travail formation"
+  ],
+  "Article L. 6315-1": [
+    "entretien professionnel",
+    "l'entretien de parcours professionnel obligatoire"
+  ],
+  "Article L. 3312-1": [
+    "c'est quoi l'intéressement",
+    "intéressement aux résultats de l'entreprise"
+  ],
+  "Article L. 3322-1": [
+    "c'est quoi la participation",
+    "participation aux résultats de l'entreprise"
+  ],
+  "Article L. 3332-1": [
+    "plan d'épargne entreprise PEE",
+    "c'est quoi un plan d'épargne d'entreprise"
+  ],
+  "Article L. 1242-1": [
+    "un CDD ne peut pas pourvoir un emploi permanent",
+    "ils abusent des CDD sur un poste permanent"
+  ],
+  "Article L. 1242-2": [
+    "dans quels cas peut-on faire un CDD",
+    "motifs de recours au CDD"
+  ],
+  "Article L. 1242-8": [
+    "durée maximale d'un CDD",
+    "un CDD peut durer combien de temps"
+  ],
+  "Article L. 1242-12": [
+    "mentions obligatoires du CDD",
+    "ce qui doit figurer dans un contrat CDD",
+    "CDD écrit obligatoire"
+  ],
+  "Article L. 1243-1": [
+    "rupture anticipée d'un CDD",
+    "peut-on casser un CDD avant la fin"
+  ],
+  "Article L. 1244-1": [
+    "CDD successifs avec le même salarié"
+  ],
+  "Article L. 1235-3-1": [
+    "nullité du licenciement conséquences indemnisation",
+    "licenciement nul quelle indemnisation"
+  ],
+  "Article L. 1235-14": [
+    "licenciement nul entreprise de moins de onze salariés",
+    "petite entreprise nullité du licenciement s'applique-t-elle"
+  ],
+  "Article L. 1235-11": [
+    "juge constate nullité de la procédure de licenciement réintégration",
+    "réintégration après licenciement nul"
+  ],
+  "Article L. 3122-11": [
+    "suivi médical du travailleur de nuit",
+    "surveillance médicale travail de nuit obligatoire"
+  ],
+  "Article L. 4625-2": [
+    "dérogation à l'organisation de la santé au travail par accord de branche"
+  ],
+  "Article L. 4622-9": [
+    "service social du travail définition",
+    "qu'est-ce que le service social du travail"
+  ],
+  "Article L. 4631-1": [
+    "service social du travail obligatoire à partir de combien de salariés",
+    "250 salariés service social du travail"
+  ],
+  "Article L. 8256-3": [
+    "peines pour travail dissimulé interdiction d'exercer",
+    "sanctions travail dissimulé interdiction professionnelle"
+  ],
+  "Article L. 8256-4": [
+    "fermeture de l'établissement pour travail dissimulé"
+  ],
+  "Article D. 3121-6": [
+    "dépassement de la durée quotidienne en cas d'urgence",
+    "urgence employeur dépasse durée maximale travail"
+  ],
+  "Article R. 3121-12": [
+    "autorisation de dépassement de la durée hebdomadaire moyenne maximale"
+  ],
+  "Article R. 3262-18": [
+    "titres-restaurant provision compte bancaire émetteur",
+    "comment fonctionne le compte du prestataire de titres-restaurant"
+  ],
+  "Article R. 3262-23": [
+    "émetteur de titres-restaurant plusieurs comptes bancaires"
+  ],
+  "Article L. 541-2": [
+    "responsabilité du producteur de déchets",
+    "qui est responsable de la gestion des déchets jusqu'à leur élimination"
+  ],
+  "Article D. 541-12-1": [
+    "catégorie de déchets dangereux définition",
+    "propriétés de danger des déchets dangereux annexe"
+  ],
+  "Article R. 541-11-1": [
+    "déclassement de déchets dangereux en non dangereux par dilution interdit",
+    "peut-on diluer un déchet dangereux pour le déclasser"
+  ],
+  "Article L. 121-1": [
+    "participation du public à l'élaboration d'un projet environnemental",
+    "concertation publique projet plan programme depuis quand"
+  ],
+  "Article L. 121-16": [
+    "concertation préalable durée public projet",
+    "durée minimale et maximale de la concertation préalable"
+  ],
+  "Article L. 213-11-11": [
+    "remise de redevance par l'agence de l'eau",
+    "l'agence de l'eau peut-elle annuler une redevance"
+  ],
+  "Article R. 213-47": [
+    "régies de recettes et d'avances agence de l'eau"
+  ],
+  "Article L. 213-10-10": [
+    "redevance pour stockage d'eau en période d'étiage",
+    "taxe stockage d'eau étiage"
+  ],
+  "Article R. 512-39-5": [
+    "cessation d'activité d'une installation classée avant 2005 obligations préfet",
+    "installation classée ayant cessé son activité prescriptions préfectorales"
+  ],
+  "Article R. 512-66-1": [
+    "certification entreprise dépollution sols pollués"
+  ],
+  "Article L. 512-21": [
+    "tiers demandeur cessation activité installation classée réhabilitation",
+    "un tiers peut-il se substituer à l'exploitant pour réhabiliter le site"
+  ],
+  "Article D. 542-97": [
+    "inventaire des sources scellées usagées déchets radioactifs"
+  ],
+  "Article R. 542-68": [
+    "obligation annuelle transmission inventaire déchets radioactifs à l'ANDRA",
+    "qui doit déclarer chaque année ses déchets radioactifs"
+  ],
+  "Article D. 542-88": [
+    "stratégie de gestion des déchets de faible activité à vie longue"
+  ]
+}

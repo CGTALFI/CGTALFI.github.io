@@ -3363,6 +3363,8 @@ lucide-react/dist/esm/lucide-react.mjs:
   var ENV_URL = window.CGT_ENV_URL || "chatbot/search-env.json";
   var RED = "#E30613";
   var DOCS = [], DF = Object.create(null), N = 0, SUMDL = 0;
+  // doc2query (Lot 1) : index secondaire sur les questions reformulées (voir addDocs/run)
+  var QDOCS = [], QDF = Object.create(null), QSUMDL = 0;
   var ARTMAP = Object.create(null);
   var coreState = 0, codeState = 0, envState = 0; // 0=absent 1=chargement 2=prêt
   var PENDING = null;
@@ -3601,6 +3603,15 @@ lucide-react/dist/esm/lucide-react.mjs:
       // clé d'article pour l'accès direct
       var ak = artKey(d.r);
       if (ak) { d._ak = ak; (ARTMAP[ak] = ARTMAP[ak] || []).push(DOCS.length); }
+      // doc2query (Lot 1) : index secondaire sur les questions reformulées
+      if (d.q && d.q.length) {
+        var qtoks = tokenize(d.q.join(" "));
+        var qtf = Object.create(null);
+        for (var qi = 0; qi < qtoks.length; qi++) qtf[qtoks[qi]] = (qtf[qtoks[qi]] || 0) + 1;
+        d._qtf = qtf; d._qlen = qtoks.length; QSUMDL += qtoks.length;
+        for (var qt in qtf) QDF[qt] = (QDF[qt] || 0) + 1;
+        QDOCS.push(DOCS.length);
+      }
       DOCS.push(d);
     }
     N = DOCS.length;
@@ -3680,9 +3691,59 @@ lucide-react/dist/esm/lucide-react.mjs:
     if (!exact.length) {
       if (!scored.length || (orig.length >= 2 && maxCov < 2)) { refuseMsg(corrected); return; }
     }
-    // 4. Étape 2 — re-classement des 50 meilleurs (phrase, proximité, couverture, champ)
-    var topc = scored.slice(0, 50), maxb = topc.length ? topc[0][0] : 1;
-    var reranked = topc.map(function (p) { return [rerankScore(DOCS[p[1]], covTerms, p[0] / maxb), p[1]]; });
+    // 3bis. Liste B — BM25 sur les questions doc2query (Lot 1), puis fusion RRF
+    // (Reciprocal Rank Fusion, sans poids à régler) avec la liste A (texte).
+    // Comble l'écart de vocabulaire sans toucher au garde-fou anti-bruit
+    // (calculé sur la liste A seule, ci-dessus). Réutilise present/wmap déjà
+    // enrichis par SYN + situations + rescue orthographique.
+    var scoredQ = [];
+    if (QDOCS.length && present.length) {
+      var qavgdl = QSUMDL / QDOCS.length;
+      for (var qd = 0; qd < QDOCS.length; qd++) {
+        var qi2 = QDOCS[qd];
+        if (exact.indexOf(qi2) !== -1) continue;
+        var d2 = DOCS[qi2], s2 = 0;
+        for (var k2 = 0; k2 < present.length; k2++) {
+          var term2 = present[k2], f2 = d2._qtf[term2];
+          if (!f2) continue;
+          var idf2 = Math.log(1 + (QDOCS.length - QDF[term2] + 0.5) / (QDF[term2] + 0.5));
+          s2 += wmap[term2] * idf2 * (f2 * (k1 + 1)) / (f2 + k1 * (1 - b + b * d2._qlen / qavgdl));
+        }
+        if (s2 > 0) scoredQ.push([s2, qi2]);
+      }
+      scoredQ.sort(function (a, b3) { return b3[0] - a[0]; });
+    }
+    // Fusion RRF sur le TOP 50 de CHAQUE liste (pas sur l'ensemble non plafonné) :
+    // sinon un document valable mais moyennement classé en liste A peut se faire
+    // évincer du pool par de nombreux concurrents modérés en liste B, avant même
+    // d'avoir sa chance au re-classement (rang RRF, pas magnitude BM25).
+    var RRF_K = 60, RRF_POOL = 50;
+    var topA0 = scored.slice(0, RRF_POOL), topB0 = scoredQ.slice(0, RRF_POOL);
+    var rrf = Object.create(null);
+    for (var ra = 0; ra < topA0.length; ra++) { var di = topA0[ra][1]; rrf[di] = (rrf[di] || 0) + 1 / (RRF_K + ra + 1); }
+    for (var rb = 0; rb < topB0.length; rb++) { var dj = topB0[rb][1]; rrf[dj] = (rrf[dj] || 0) + 1 / (RRF_K + rb + 1); }
+    var fused = Object.keys(rrf).map(function (k4) { return [rrf[k4], +k4]; });
+    fused.sort(function (a, b4) { return b4[0] - a[0]; });
+    // score BM25 d'origine (liste A si présent, sinon liste B) conservé pour le rerank
+    var bm25ById = Object.create(null), fromA = Object.create(null);
+    scored.forEach(function (p) { bm25ById[p[1]] = p[0]; fromA[p[1]] = 1; });
+    scoredQ.forEach(function (p) { if (bm25ById[p[1]] == null) bm25ById[p[1]] = p[0]; });
+    // Normalisation SÉPARÉE par liste : les magnitudes BM25 de la liste A (texte
+    // intégral) et de la liste B (quelques questions doc2query par article) ne
+    // sont pas sur la même échelle — un score liste A anormalement élevé (ex.
+    // chunk dense en mots génériques) écraserait à tort un bon score liste B
+    // s'il servait de dénominateur commun.
+    var maxA = 0; scored.forEach(function (p) { if (p[0] > maxA) maxA = p[0]; }); if (!maxA) maxA = 1;
+    var maxQ = 0; scoredQ.forEach(function (p) { if (p[0] > maxQ) maxQ = p[0]; }); if (!maxQ) maxQ = 1;
+    // 4. Étape 2 — re-classement (phrase, proximité, couverture, champ). Le pool
+    // (union des deux top 50, déjà borné à 100 candidats) n'est PAS re-découpé
+    // ici : un second découpage évincerait à nouveau des candidats valables de
+    // la liste A face à la compétition combinée (coût de calcul négligeable).
+    var topc = fused.map(function (p) { return [bm25ById[p[1]], p[1]]; });
+    var reranked = topc.map(function (p) {
+      var norm = (fromA[p[1]] ? p[0] / maxA : p[0] / maxQ);
+      return [rerankScore(DOCS[p[1]], covTerms, norm), p[1]];
+    });
     reranked.sort(function (a, b2) { return b2[0] - a[0]; });
     var order = exact.concat(reranked.map(function (p) { return p[1]; }));
     var seen = Object.create(null), uni = [];

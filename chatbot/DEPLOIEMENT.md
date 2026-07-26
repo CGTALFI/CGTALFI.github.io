@@ -32,11 +32,26 @@ restent pleinement opérationnels (pas d'erreur bloquante).
   - `search-code.json` — **code du travail, partie législative** (~12 500 articles) ;
   - `search-env.json` — **code de l'environnement, partie législative**
     (~7 700 articles) ; chargé en dernier, en arrière-plan, puis mis en cache.
-- **Moteur** (recherche en 2 étapes, réglée par banc d'évaluation) : rappel
-  **BM25** → **re-classement** des 50 meilleurs (phrase, proximité, couverture,
-  champ). Plus **accès direct par numéro d'article** (`L2312-8`, `L. 211-1`),
-  **synonymes/sigles** (CSE, CSSCT, RTT, NAO…) et garde-fou anti-hors-sujet.
+- **Moteur** — recherche en deux temps, chaque réglage validé par banc d'essai :
+  1. **Rappel** : BM25 sur le texte **fusionné (RRF)** avec un second index BM25
+     sur les questions **doc2query** (`chatbot/doc2query.json` : ~156 articles,
+     reformulations en langage militant, indexées avec l'extrait). Plus
+     **compréhension du langage courant** : synonymes/sigles étendus et
+     dictionnaire de **situations** (phrase/inquiétude du quotidien → concepts
+     juridiques), rescue orthographique en dernier recours.
+  2. **Re-classement** du pool fusionné : phrase, proximité, couverture, champ.
+  Plus : **accès direct par numéro d'article** (`L2312-8`, `L. 211-1`, avec ou
+  sans préfixe L/R/D) et **garde-fou anti-hors-sujet**.
   Aucune IA générative → aucune invention. (Réglage/mesure : `_eval.mjs`, dev only.)
+
+> **Modèles d'IA : testés et écartés, par la mesure.** Un bi-encodeur (e5-small)
+> et un cross-encodeur (bge-reranker-v2-m3) ont été évalués pour améliorer le
+> rappel sur le langage familier : le premier n'apporte qu'un gain marginal, le
+> second **dégrade** les résultats. Raison de fond : le problème est un problème
+> de **rappel** (les bons mots ne sont pas dans l'index), pas de classement — un
+> re-classeur ne peut pas retrouver ce que la recherche n'a pas ramené. Détails
+> et chiffres : `AUDIT-LOT2-3.md`. Le levier qui marche est le doc2query
+> (`AUDIT-DOC2QUERY-ETENDU.md`).
 
 ### Séquence des messages affichés à l'utilisateur
 
@@ -61,17 +76,44 @@ node serve-local.mjs
 
 Puis ouvrir **http://localhost:8080**. (Alternative : `python -m http.server 8080`.)
 
-## Mettre à jour le corpus (seule opération récurrente)
+## Mettre à jour le corpus (opération récurrente)
 
-Quand un texte change dans `sources/` :
+Quand un texte change dans `sources/`, **ou** quand on enrichit
+`chatbot/doc2query.json` :
 
 ```bash
 cd chatbot
 node build-index.mjs     # régénère LES TROIS index (socle + code du travail + environnement)
 ```
 
-Puis publier `index.html` + `chatbot/search-index.json` + `chatbot/search-code.json`
-+ `chatbot/search-env.json`.
+Puis publier `index.html` + les trois `chatbot/search-*.json`.
+
+## Améliorer la pertinence : enrichir `doc2query.json`
+
+**C'est le levier le plus rentable** (voir `AUDIT-DOC2QUERY-ETENDU.md`) pour la
+compréhension du langage familier, sans aucun téléchargement supplémentaire
+pour l'utilisateur.
+
+Le principe : associer à un article les **questions qu'un·e militant·e poserait
+vraiment**, dans son vocabulaire. Elles sont indexées avec l'article, ce qui le
+rend trouvable même quand la question n'emploie aucun mot du texte de loi.
+
+```json
+"Article L. 3133-4": [
+  "le 1er mai est férié et chômé",
+  "premier mai travail interdit"
+]
+```
+
+Règles :
+- écrire **d'après le contenu réel** de l'article (ne jamais inventer une règle) ;
+- **registre courant** (« filer un local », « ils veulent me virer », « le toubib »),
+  c'est là que se situe le gain — pas dans des paraphrases juridiques ;
+- 3 à 8 formulations par article suffisent ; la clé doit correspondre **exactement**
+  à la référence produite par le chunker (« Article L. 3133-4 », avec l'espace
+  après le point) ;
+- après modification, relancer `node build-index.mjs` puis le test de
+  non-régression avant de publier.
 
 ## Mise en ligne (une fois)
 
@@ -106,6 +148,11 @@ avant `</body>`).
 - **Non-conseil** : réponses informatives, ne remplacent pas un·e délégué·e.
 - **Qualité de recherche** : BM25 + re-classement, avec repli anti-bruit (refus
   si moins de deux termes de la question existent dans le corpus).
+- **RRF (fusion texte + doc2query)** : les deux listes sont plafonnées à leur
+  propre top 50 *avant* fusion et normalisées *séparément* (échelles BM25
+  différentes selon la taille du champ indexé) — sinon un document au score
+  brut anormalement élevé sur un champ dense en mots génériques peut évincer
+  à tort de bons candidats du pool de re-classement.
 - **Format du code de l'environnement** : ce fichier utilise des titres Markdown
   purs (`### L. 211-1`, sans le mot « Article ») et contient une ligne de
   navigation parasite après chaque article — les deux sont gérés spécifiquement

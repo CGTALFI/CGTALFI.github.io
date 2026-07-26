@@ -7,5 +7,6 @@ sources/
 node_modules/
 embed-build/
 
-# Harnais d'évaluation & scripts de dev (non publiés)
+# Harnais d'évaluation, jeux de test & scripts de dev (non publiés)
 _*.mjs
+_*.json
