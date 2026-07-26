@@ -16,6 +16,13 @@
  *     ces deux derniers sont chargés à part par le widget, en arrière-plan et
  *     séquentiellement (mobile préservé).
  *
+ * doc2query (Lot 1) : chatbot/doc2query.json associe à certains articles des
+ * questions reformulées en langage militant courant (ciblant les clusters de
+ * confusion identifiés dans AUDIT-LOT0.md). Ajoutées au champ `q` des
+ * documents correspondants ; le widget les indexe séparément et fusionne
+ * (RRF) avec la recherche sur le texte — comble l'écart de vocabulaire dans
+ * l'index, sans coût d'exécution.
+ *
  * Utilisation :
  *   node build-index.mjs                 # régénère les trois shards
  *
@@ -29,6 +36,13 @@ const SOURCES_DIR = process.env.SOURCES_DIR || join(import.meta.dirname, "source
 const OUT_CORE = process.env.OUT || join(import.meta.dirname, "search-index.json");
 const OUT_CODE = join(import.meta.dirname, "search-code.json");
 const OUT_ENV = join(import.meta.dirname, "search-env.json");
+
+const DOC2QUERY_FILE = join(import.meta.dirname, "doc2query.json");
+let DOC2QUERY = {};
+try {
+  DOC2QUERY = JSON.parse(await readFile(DOC2QUERY_FILE, "utf8"));
+  delete DOC2QUERY._comment;
+} catch { /* fichier optionnel */ }
 
 // Exclusion : PV CSE/CSSCT (07, données personnelles).
 const EXCLUDE = [/(^|\/)07 - /i];
@@ -103,6 +117,7 @@ for (const file of files) {
       s: rel,                                          // chemin source
       x,                                               // texte de l'extrait
     };
+    if (rec.r && DOC2QUERY[rec.r]) rec.q = DOC2QUERY[rec.r]; // doc2query (Lot 1)
     if (meta.type === "code_du_travail") {
       if (c.path) rec.h = c.path;                      // chemin hiérarchique (code)
       code.push(rec);
@@ -114,6 +129,9 @@ for (const file of files) {
     }
   }
 }
+
+const withQ = core.concat(code, env).filter((d) => d.q).length;
+console.log(`doc2query : ${Object.keys(DOC2QUERY).length} article(s) couverts, ${withQ} extrait(s) enrichis.`);
 
 async function emit(out, docs, label) {
   const payload = {
